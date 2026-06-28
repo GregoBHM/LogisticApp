@@ -16,13 +16,11 @@ app = FastAPI(
     description="Backend API para gestión de inventarios y proyectos.",
     version="1.0.0",
     lifespan=lifespan,
-    docs_url="/movil/docs",
-    redoc_url="/movil/redoc",
-    openapi_url="/movil/openapi.json"
+    root_path="/movil"
 )
 
-app.include_router(api.router, prefix="/movil")
+app.include_router(api.router)
 
-@app.get("/movil/health")
+@app.get("/health")
 def read_root():
     return {"message": "StackMovi API is running"}
