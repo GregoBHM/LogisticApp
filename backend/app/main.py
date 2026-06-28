@@ -11,16 +11,21 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     yield
 
-app = FastAPI(
+# Aplicación interna (sin prefijos manuales)
+api_app = FastAPI(
     title="StackMovi API",
     description="Backend API para gestión de inventarios y proyectos.",
     version="1.0.0",
     lifespan=lifespan,
-    root_path="/movil"
 )
 
-app.include_router(api.router)
+api_app.include_router(api.router)
 
-@app.get("/health")
+@api_app.get("/health")
 def read_root():
     return {"message": "StackMovi API is running"}
+
+# Aplicación principal que enruta todo bajo /movil
+app = FastAPI()
+app.mount("/movil", api_app)
+
