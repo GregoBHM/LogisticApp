@@ -1,0 +1,259 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/models/models.dart';
+import '../providers/project_providers.dart';
+import 'cuenta_detalle_screen.dart';
+
+class ProyectoDetalleScreen extends ConsumerWidget {
+  final ProyectoModel proyecto;
+  const ProyectoDetalleScreen({super.key, required this.proyecto});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cuentasAsync = ref.watch(cuentasProvider(proyecto.id));
+    final miembrosAsync = ref.watch(miembrosProvider(proyecto.id));
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 16), onPressed: () => Navigator.pop(context)),
+        title: Text(proyecto.nombre),
+        actions: [
+          IconButton(icon: const Icon(Icons.person_add_outlined, size: 18), onPressed: () => _showInviteSheet(context)),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(cuentasProvider(proyecto.id));
+          ref.invalidate(miembrosProvider(proyecto.id));
+        },
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+          children: [
+            const Text('Equipo', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500, letterSpacing: 0.5)),
+            const SizedBox(height: 10),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: miembrosAsync.when(
+                loading: () => const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator())),
+                error: (e, _) => Padding(padding: const EdgeInsets.all(20), child: Text('Error: $e')),
+                data: (miembros) => Column(
+                  children: [
+                    if (miembros.isEmpty)
+                      const Padding(padding: EdgeInsets.all(20), child: Text('No hay miembros', style: TextStyle(color: AppColors.textMuted))),
+                    for (int i = 0; i < miembros.length; i++) ...[
+                      _buildMemberRow(miembros[i]),
+                      if (i < miembros.length - 1) const Divider(color: AppColors.border, indent: 60),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text('Cuentas', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500, letterSpacing: 0.5)),
+            const SizedBox(height: 10),
+            cuentasAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error: $e')),
+              data: (cuentas) {
+                if (cuentas.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const Center(child: Text('Sin cuentas aún', style: TextStyle(color: AppColors.textMuted, fontSize: 13))),
+                  );
+                }
+                return Column(
+                  children: cuentas.map((c) => _buildCuentaCard(context, c, proyecto.monedaSimbolo)).toList(),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.small(
+        onPressed: () => _showNuevaCuentaSheet(context, ref),
+        backgroundColor: AppColors.cream,
+        foregroundColor: AppColors.background,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: const Icon(Icons.add, size: 20),
+      ),
+    );
+  }
+
+  Widget _buildMemberRow(Map<String, dynamic> m) {
+    final nombre = m['perfiles']?['nombre'] ?? m['usuario_id'] ?? 'Usuario';
+    final email = m['perfiles']?['email'] ?? '';
+    final rol = m['rol'] ?? 'miembro';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Center(child: Text(nombre[0].toString().toUpperCase(), style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(nombre, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w500, fontSize: 13)),
+                Text(email, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Text(rol, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCuentaCard(BuildContext context, CuentaResumenModel cuenta, String sym) {
+    final estaAbierta = cuenta.estado == 'abierta';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GestureDetector(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CuentaDetalleScreen(cuenta: cuenta, proyectoNombre: proyecto.nombre))),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(cuenta.producto, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w500, fontSize: 14)),
+                        const SizedBox(height: 2),
+                        Text(cuenta.nombre, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: estaAbierta ? AppColors.positiveSubtle : AppColors.negativeSubtle,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: estaAbierta ? AppColors.positive.withOpacity(0.15) : AppColors.negative.withOpacity(0.15)),
+                    ),
+                    child: Text(
+                      estaAbierta ? 'Abierta' : 'Cerrada',
+                      style: TextStyle(color: estaAbierta ? AppColors.positive : AppColors.negative, fontSize: 11, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Text(
+                    '${cuenta.cantidadUnidades.toStringAsFixed(0)} ${cuenta.tipoUnidad}s · ${cuenta.kilosTotales.toStringAsFixed(0)} kg',
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  ),
+                  const Spacer(),
+                  Text(DateFormat('dd MMM', 'es').format(cuenta.fechaApertura), style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _statCol('Inv. Total', '$sym ${cuenta.inversionTotal.toStringAsFixed(2)}'),
+                  _statCol('Vendido', '${cuenta.kilosVendidos.toStringAsFixed(0)} kg'),
+                  _statCol('Restante', '${cuenta.kilosRestantes.toStringAsFixed(0)} kg', align: CrossAxisAlignment.end),
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statCol(String label, String value, {CrossAxisAlignment align = CrossAxisAlignment.start}) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: align,
+        children: [
+          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+          const SizedBox(height: 2),
+          Text(value, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w500, fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  void _showInviteSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Invitar Miembro', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 20),
+            const TextField(
+              decoration: InputDecoration(hintText: 'Correo electrónico'),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.cream,
+                  foregroundColor: AppColors.background,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('Enviar Invitación'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNuevaCuentaSheet(BuildContext context, WidgetRef ref) {
+    // Implementación futura del formulario
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Formulario de nueva cuenta (En desarrollo)')));
+  }
+}

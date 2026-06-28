@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: stackmovi_db
+    restart: always
+    environment:
+      POSTGRES_USER: stackmovi
+      POSTGRES_PASSWORD: stackmovi_password
+      POSTGRES_DB: stackmovi_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stackmovi_api
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://stackmovi:stackmovi_password@db:5432/stackmovi_db
+      - SECRET_KEY=supersecretkey_change_in_production
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

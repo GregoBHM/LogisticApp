@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+sqlalchemy
+asyncpg
+greenlet
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart
+openpyxl
+pandas
