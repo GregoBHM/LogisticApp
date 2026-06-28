@@ -15,7 +15,10 @@ app = FastAPI(
     title="StackMovi API",
     description="Backend API para gestión de inventarios y proyectos.",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url="/movil/docs",
+    redoc_url="/movil/redoc",
+    openapi_url="/movil/openapi.json"
 )
 
 app.include_router(api.router, prefix="/movil")
