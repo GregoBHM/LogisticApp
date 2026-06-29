@@ -308,9 +308,25 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: _sheetField(cantidadCtrl, 'Cantidad', 'Ej: 200', keyboardType: TextInputType.number, onChanged: (_) => setModal(() {}))),
+                    Expanded(child: _sheetField(cantidadCtrl, 'Cantidad', 'Ej: 200', keyboardType: TextInputType.number, onChanged: (_) {
+                      setModal(() {
+                        final cant = double.tryParse(cantidadCtrl.text) ?? 0;
+                        final kgU = double.tryParse(kgCtrl.text) ?? 0;
+                        final inv = double.tryParse(inversionCtrl.text) ?? 0;
+                        final total = cant * kgU;
+                        if (total > 0 && inv > 0) precioCtrl.text = (inv / total).toStringAsFixed(2);
+                      });
+                    })),
                     const SizedBox(width: 12),
-                    Expanded(child: _sheetField(kgCtrl, 'Kg por unidad', 'Ej: 50', keyboardType: TextInputType.number, onChanged: (_) => setModal(() {}))),
+                    Expanded(child: _sheetField(kgCtrl, 'Kg por unidad', 'Ej: 50', keyboardType: TextInputType.number, onChanged: (_) {
+                      setModal(() {
+                        final cant = double.tryParse(cantidadCtrl.text) ?? 0;
+                        final kgU = double.tryParse(kgCtrl.text) ?? 0;
+                        final inv = double.tryParse(inversionCtrl.text) ?? 0;
+                        final total = cant * kgU;
+                        if (total > 0 && inv > 0) precioCtrl.text = (inv / total).toStringAsFixed(2);
+                      });
+                    })),
                   ],
                 ),
                 if (cantidadCtrl.text.isNotEmpty && kgCtrl.text.isNotEmpty) ...[
@@ -321,11 +337,54 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   ),
                 ],
                 const SizedBox(height: 12),
-                Row(
+                _sheetField(inversionCtrl, 'Inversión Total', 'Ej: 5000', keyboardType: TextInputType.number, onChanged: (_) {
+                  setModal(() {
+                    final cant = double.tryParse(cantidadCtrl.text) ?? 0;
+                    final kgU = double.tryParse(kgCtrl.text) ?? 0;
+                    final inv = double.tryParse(inversionCtrl.text) ?? 0;
+                    final total = cant * kgU;
+                    if (total > 0 && inv > 0) precioCtrl.text = (inv / total).toStringAsFixed(2);
+                  });
+                }),
+                const SizedBox(height: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: _sheetField(inversionCtrl, 'Inversión Total', 'Ej: 5000', keyboardType: TextInputType.number)),
-                    const SizedBox(width: 12),
-                    Expanded(child: _sheetField(precioCtrl, 'Precio Venta /Kg', 'Ej: 1.80', keyboardType: TextInputType.number)),
+                    Row(
+                      children: [
+                        const Text('Precio de Venta /Kg', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(color: AppColors.cream.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
+                          child: const Text('Sugerido', style: TextStyle(color: AppColors.cream, fontSize: 10, fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: precioCtrl,
+                      keyboardType: TextInputType.number,
+                      onChanged: (_) => setModal(() {}),
+                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Se calcula automáticamente',
+                        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                        filled: true,
+                        fillColor: AppColors.background,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.cream)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    if (precioCtrl.text.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'A este precio recuperas exactamente tu inversión. Sube el precio para obtener ganancia.',
+                        style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 24),
