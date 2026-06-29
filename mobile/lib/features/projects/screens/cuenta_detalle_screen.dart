@@ -292,9 +292,21 @@ class CuentaDetalleScreen extends ConsumerWidget {
     final clienteCtrl = TextEditingController();
     final kilosCtrl = TextEditingController();
     final precioCtrl = TextEditingController(text: cuenta.precioVentaKg.toStringAsFixed(2));
+    final totalCtrl = TextEditingController();
     final abonoCtrl = TextEditingController();
     DateTime fechaVenta = DateTime.now();
+    bool cobrarAhora = true; // false = "cobrar después"
     bool loading = false;
+
+    // Auto-update total when kilos or precio change
+    void recalcTotal(Function setState) {
+      final k = double.tryParse(kilosCtrl.text) ?? 0;
+      final p = double.tryParse(precioCtrl.text) ?? 0;
+      if (k > 0 && p > 0) {
+        totalCtrl.text = (k * p).toStringAsFixed(2);
+      }
+      setState(() {});
+    }
 
     showModalBottomSheet(
       context: context,
@@ -303,11 +315,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx2, setModal) {
-          final kilos = double.tryParse(kilosCtrl.text) ?? 0;
-          final precio = double.tryParse(precioCtrl.text) ?? 0;
-          final abono = double.tryParse(abonoCtrl.text) ?? 0;
-          final total = kilos * precio;
-          final saldo = (total - abono).clamp(0, double.infinity);
+          final total = double.tryParse(totalCtrl.text) ?? 0;
+          final abono = cobrarAhora ? (double.tryParse(abonoCtrl.text) ?? 0) : 0.0;
+          final saldo = (total - abono).clamp(0.0, double.infinity);
 
           return Padding(
             padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx2).viewInsets.bottom + 32),
@@ -318,35 +328,133 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 children: [
                   Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
                   const SizedBox(height: 20),
-                  const Text('Nueva Venta', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 6),
-                  Text('Stock disponible: ${cuenta.kilosRestantes.toStringAsFixed(0)} kg', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Nueva Venta', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+                      Text('Stock: ${cuenta.kilosRestantes.toStringAsFixed(0)} kg', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                    ],
+                  ),
                   const SizedBox(height: 20),
                   _sheetField(clienteCtrl, 'Cliente', 'Nombre del comprador'),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: _sheetField(kilosCtrl, 'Kilos a vender', 'Ej: 500', keyboardType: TextInputType.number, onChanged: (_) => setModal(() {}))),
+                      Expanded(child: _sheetField(kilosCtrl, 'Kilos', 'Ej: 29.8', keyboardType: TextInputType.number,
+                        onChanged: (_) => recalcTotal(setModal))),
                       const SizedBox(width: 12),
-                      Expanded(child: _sheetField(precioCtrl, 'Precio /Kg', 'Ej: 1.80', keyboardType: TextInputType.number, onChanged: (_) => setModal(() {}))),
+                      Expanded(child: _sheetField(precioCtrl, 'Precio /Kg', 'Ej: 4.00', keyboardType: TextInputType.number,
+                        onChanged: (_) => recalcTotal(setModal))),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  // TOTAL EDITABLE
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text('Total a cobrar', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                            decoration: BoxDecoration(color: AppColors.cream.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
+                            child: const Text('editable', style: TextStyle(color: AppColors.cream, fontSize: 10, fontWeight: FontWeight.w500)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: totalCtrl,
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => setModal(() {}),
+                        style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 16),
+                        decoration: InputDecoration(
+                          hintText: 'Ej: 120.00',
+                          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                          filled: true,
+                          fillColor: AppColors.background,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.cream, width: 1.5)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // MODO COBRO
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setModal(() => cobrarAhora = true),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                            decoration: BoxDecoration(
+                              color: cobrarAhora ? AppColors.cream : AppColors.background,
+                              borderRadius: BorderRadius.circular(9),
+                              border: Border.all(color: cobrarAhora ? AppColors.cream : AppColors.border),
+                            ),
+                            child: Center(child: Text('Cobrar ahora', style: TextStyle(
+                              color: cobrarAhora ? AppColors.background : AppColors.textSecondary,
+                              fontWeight: FontWeight.w600, fontSize: 13,
+                            ))),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setModal(() { cobrarAhora = false; abonoCtrl.clear(); }),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                            decoration: BoxDecoration(
+                              color: !cobrarAhora ? AppColors.cream.withValues(alpha: 0.15) : AppColors.background,
+                              borderRadius: BorderRadius.circular(9),
+                              border: Border.all(color: !cobrarAhora ? AppColors.cream : AppColors.border),
+                            ),
+                            child: Center(child: Text('Cobrar después', style: TextStyle(
+                              color: !cobrarAhora ? AppColors.cream : AppColors.textSecondary,
+                              fontWeight: FontWeight.w600, fontSize: 13,
+                            ))),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (cobrarAhora) ...[
+                    const SizedBox(height: 12),
+                    _sheetField(abonoCtrl, 'Monto recibido ahora', '0.00', keyboardType: TextInputType.number, onChanged: (_) => setModal(() {})),
+                  ],
+                  // RESUMEN SALDO
                   if (total > 0) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.border)),
+                      decoration: BoxDecoration(
+                        color: saldo == 0 ? AppColors.positiveSubtle : AppColors.negativeSubtle,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: saldo == 0 ? AppColors.positive.withValues(alpha: 0.3) : AppColors.negative.withValues(alpha: 0.3)),
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Total Venta', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                          Text(total.toStringAsFixed(2), style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 15)),
+                          Text(saldo == 0 ? '✓ Pagado completo' : 'Queda pendiente', style: TextStyle(
+                            color: saldo == 0 ? AppColors.positive : AppColors.cream,
+                            fontWeight: FontWeight.w600, fontSize: 13,
+                          )),
+                          Text(
+                            saldo == 0 ? 'S/ ${total.toStringAsFixed(2)}' : 'S/ ${saldo.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              color: saldo == 0 ? AppColors.positive : AppColors.cream,
+                              fontWeight: FontWeight.w700, fontSize: 15,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ],
-                  const SizedBox(height: 12),
-                  _sheetField(abonoCtrl, 'Monto inicial pagado (opcional)', '0.00', keyboardType: TextInputType.number, onChanged: (_) => setModal(() {})),
                   const SizedBox(height: 12),
                   GestureDetector(
                     onTap: () async {
@@ -372,10 +480,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                           const Text('Fecha de venta', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                           Row(
                             children: [
-                              Text(
-                                DateFormat('dd MMM yyyy', 'es').format(fechaVenta),
-                                style: const TextStyle(color: AppColors.cream, fontWeight: FontWeight.w500, fontSize: 13),
-                              ),
+                              Text(DateFormat('dd MMM yyyy', 'es').format(fechaVenta), style: const TextStyle(color: AppColors.cream, fontWeight: FontWeight.w500, fontSize: 13)),
                               const SizedBox(width: 6),
                               const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.cream),
                             ],
@@ -384,16 +489,6 @@ class CuentaDetalleScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  if (total > 0 && abono > 0) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(saldo == 0 ? '✓ Pagado completamente' : 'Saldo pendiente: ${saldo.toStringAsFixed(2)}',
-                          style: TextStyle(color: saldo == 0 ? AppColors.positive : AppColors.cream, fontWeight: FontWeight.w600, fontSize: 13)),
-                      ],
-                    ),
-                  ],
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -402,15 +497,22 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         final cliente = clienteCtrl.text.trim();
                         final kilos = double.tryParse(kilosCtrl.text);
                         final precio = double.tryParse(precioCtrl.text);
+                        final total = double.tryParse(totalCtrl.text);
 
-                        if (cliente.isEmpty || kilos == null || precio == null) {
-                          ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('Completa cliente, kilos y precio')));
+                        if (cliente.isEmpty || kilos == null) {
+                          ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('Ingresa el cliente y los kilos')));
+                          return;
+                        }
+                        if (total == null || total <= 0) {
+                          ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('El total debe ser mayor a 0')));
                           return;
                         }
                         if (kilos > cuenta.kilosRestantes) {
-                          ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text('No tienes suficiente stock. Disponible: ${cuenta.kilosRestantes.toStringAsFixed(0)} kg')));
+                          ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text('Stock insuficiente. Disponible: ${cuenta.kilosRestantes.toStringAsFixed(0)} kg')));
                           return;
                         }
+                        // Precio efectivo = total / kilos (en caso de que editaron el total)
+                        final precioEfectivo = precio ?? (total / kilos);
 
                         setModal(() => loading = true);
                         try {
@@ -419,9 +521,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
                             registradoPor: '',
                             cliente: cliente,
                             kilosVendidos: kilos,
-                            precioPorKg: precio,
+                            precioPorKg: precioEfectivo,
                             fechaVenta: fechaVenta,
-                            montoInicialPagado: double.tryParse(abonoCtrl.text),
+                            montoInicialPagado: cobrarAhora ? double.tryParse(abonoCtrl.text) : 0.0,
                           );
                           ref.invalidate(ventasProvider(cuenta.id));
                           if (ctx2.mounted) Navigator.pop(ctx2);
@@ -436,7 +538,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: loading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Registrar Venta', style: TextStyle(fontWeight: FontWeight.w600)),
+                      child: loading
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          : Text(cobrarAhora ? 'Registrar Venta' : 'Registrar · Cobrar después', style: const TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
@@ -447,6 +551,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
       ),
     );
   }
+
+
 
   void _showAbonoSheet(BuildContext context, WidgetRef ref, VentaModel venta) {
     final montoCtrl = TextEditingController();
