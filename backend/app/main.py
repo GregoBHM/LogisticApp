@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.api import api
 from app.core.database import engine, Base
@@ -19,6 +20,15 @@ api_app = FastAPI(
     lifespan=lifespan,
 )
 
+# Configurar CORS para permitir que Flutter Web se conecte
+api_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 api_app.include_router(api.router)
 
 @api_app.get("/health")
@@ -27,5 +37,14 @@ def read_root():
 
 # Aplicación principal que enruta todo bajo /movil
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.mount("/movil", api_app)
 
