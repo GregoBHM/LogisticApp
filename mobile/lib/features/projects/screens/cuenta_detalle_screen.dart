@@ -9,11 +9,13 @@ import '../../reports/screens/reportes_screen.dart';
 class CuentaDetalleScreen extends ConsumerWidget {
   final CuentaResumenModel cuenta;
   final String proyectoNombre;
+  final String monedaSimbolo;
 
   const CuentaDetalleScreen({
     super.key,
     required this.cuenta,
     required this.proyectoNombre,
+    this.monedaSimbolo = 'S/',
   });
 
   @override
@@ -31,7 +33,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.insert_chart_outlined, size: 20),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => ReportesScreen(cuenta: cuenta, proyectoNombre: proyectoNombre)));
+              Navigator.push(context, MaterialPageRoute(builder: (_) => ReportesScreen(cuenta: cuenta, proyectoNombre: proyectoNombre, monedaSimbolo: monedaSimbolo)));
             },
           ),
           if (estaAbierta)
@@ -291,6 +293,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
     final kilosCtrl = TextEditingController();
     final precioCtrl = TextEditingController(text: cuenta.precioVentaKg.toStringAsFixed(2));
     final abonoCtrl = TextEditingController();
+    DateTime fechaVenta = DateTime.now();
     bool loading = false;
 
     showModalBottomSheet(
@@ -344,6 +347,43 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   ],
                   const SizedBox(height: 12),
                   _sheetField(abonoCtrl, 'Monto inicial pagado (opcional)', '0.00', keyboardType: TextInputType.number, onChanged: (_) => setModal(() {})),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: ctx2,
+                        initialDate: fechaVenta,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now(),
+                        builder: (c, child) => Theme(data: ThemeData.dark(), child: child!),
+                      );
+                      if (picked != null) setModal(() => fechaVenta = picked);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Fecha de venta', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                          Row(
+                            children: [
+                              Text(
+                                DateFormat('dd MMM yyyy', 'es').format(fechaVenta),
+                                style: const TextStyle(color: AppColors.cream, fontWeight: FontWeight.w500, fontSize: 13),
+                              ),
+                              const SizedBox(width: 6),
+                              const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.cream),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   if (total > 0 && abono > 0) ...[
                     const SizedBox(height: 8),
                     Row(
@@ -380,7 +420,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                             cliente: cliente,
                             kilosVendidos: kilos,
                             precioPorKg: precio,
-                            fechaVenta: DateTime.now(),
+                            fechaVenta: fechaVenta,
                             montoInicialPagado: double.tryParse(abonoCtrl.text),
                           );
                           ref.invalidate(ventasProvider(cuenta.id));

@@ -139,7 +139,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CuentaDetalleScreen(cuenta: cuenta, proyectoNombre: proyecto.nombre))),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CuentaDetalleScreen(cuenta: cuenta, proyectoNombre: proyecto.nombre, monedaSimbolo: sym))),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -260,6 +260,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
     final inversionCtrl = TextEditingController();
     final precioCtrl = TextEditingController();
     String tipoUnidad = 'Saco';
+    DateTime fechaApertura = DateTime.now();
     bool loading = false;
 
     showModalBottomSheet(
@@ -387,6 +388,43 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     ],
                   ],
                 ),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: ctx2,
+                      initialDate: fechaApertura,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                      builder: (c, child) => Theme(data: ThemeData.dark(), child: child!),
+                    );
+                    if (picked != null) setModal(() => fechaApertura = picked);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Fecha de apertura', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                        Row(
+                          children: [
+                            Text(
+                              DateFormat('dd MMM yyyy', 'es').format(fechaApertura),
+                              style: const TextStyle(color: AppColors.cream, fontWeight: FontWeight.w500, fontSize: 13),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.cream),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -420,7 +458,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                           inversionTotal: inversion,
                           precioVentaKg: precio,
                           creadoPor: '',
-                          fechaApertura: DateTime.now(),
+                          fechaApertura: fechaApertura,
                         );
                         ref.invalidate(cuentasProvider(proyecto.id));
                         if (ctx2.mounted) Navigator.pop(ctx2);
