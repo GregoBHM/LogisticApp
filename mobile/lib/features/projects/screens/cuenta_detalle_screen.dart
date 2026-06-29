@@ -20,10 +20,13 @@ class CuentaDetalleScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ventasAsync = ref.watch(ventasProvider(cuenta.id));
-    final gastosAsync = ref.watch(gastosFamilyProvider(cuenta.id));
+    final cuentasAsync = ref.watch(cuentasProvider(cuenta.proyectoId));
+    final liveCuenta = cuentasAsync.value?.firstWhere((c) => c.id == cuenta.id, orElse: () => cuenta) ?? cuenta;
+
+    final ventasAsync = ref.watch(ventasProvider(liveCuenta.id));
+    final gastosAsync = ref.watch(gastosFamilyProvider(liveCuenta.id));
     
-    final estaAbierta = cuenta.estado == 'abierta';
+    final estaAbierta = liveCuenta.estado == 'abierta';
 
     return Scaffold(
       appBar: AppBar(
@@ -51,7 +54,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
           children: [
-            _buildResumenCard(context),
+            _buildResumenCard(context, liveCuenta),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -59,7 +62,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 const Text('Ventas', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: 0.5)),
                 if (estaAbierta)
                   GestureDetector(
-                    onTap: () => _showNuevaVentaSheet(context, ref),
+                    onTap: () => _showNuevaVentaSheet(context, ref, liveCuenta),
                     child: const Text('+ Nueva Venta', style: TextStyle(color: AppColors.cream, fontSize: 13, fontWeight: FontWeight.w600)),
                   ),
               ],
@@ -70,10 +73,10 @@ class CuentaDetalleScreen extends ConsumerWidget {
               error: (e, _) => Text('Error: $e'),
               data: (ventas) {
                 if (ventas.isEmpty) {
-                  return const Text('No hay ventas registradas.', style: TextStyle(color: AppColors.textMuted));
+                  return const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Center(child: Text('No hay ventas registradas', style: TextStyle(color: AppColors.textMuted, fontSize: 13))));
                 }
                 return Column(
-                  children: ventas.map((v) => _buildVentaRow(context, ref, v)).toList(),
+                  children: ventas.map((v) => _buildVentaRow(context, ref, v, liveCuenta)).toList(),
                 );
               },
             ),
@@ -84,7 +87,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 const Text('Gastos Operativos', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: 0.5)),
                 if (estaAbierta)
                   GestureDetector(
-                    onTap: () => _showNuevoGastoSheet(context, ref),
+                    onTap: () => _showNuevoGastoSheet(context, ref, liveCuenta),
                     child: const Text('+ Añadir Gasto', style: TextStyle(color: AppColors.cream, fontSize: 13, fontWeight: FontWeight.w600)),
                   ),
               ],
@@ -108,18 +111,14 @@ class CuentaDetalleScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildResumenCard(BuildContext context) {
-    final gananciaReal = cuenta.gananciaReal;
-    final esPositivo = gananciaReal >= 0;
+  Widget _buildResumenCard(BuildContext context, CuentaResumenModel liveCuenta) {
+    final ganancia = liveCuenta.gananciaReal;
+    final esPositivo = ganancia >= 0;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.surface, AppColors.surface.withValues(alpha: 0.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -127,14 +126,15 @@ class CuentaDetalleScreen extends ConsumerWidget {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Ganancia Real', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  const Text('Balance Real', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                   const SizedBox(height: 4),
                   Text(
-                    '${esPositivo ? '+' : ''}${gananciaReal.toStringAsFixed(2)}',
+                    '${esPositivo ? '+' : ''}${ganancia.toStringAsFixed(2)}',
                     style: TextStyle(
                       color: esPositivo ? AppColors.positive : AppColors.negative,
                       fontSize: 24,
@@ -147,13 +147,13 @@ class CuentaDetalleScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: cuenta.estado == 'abierta' ? AppColors.positiveSubtle : AppColors.negativeSubtle,
+                  color: liveCuenta.estado == 'abierta' ? AppColors.positiveSubtle : AppColors.negativeSubtle,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  cuenta.estado == 'abierta' ? 'En Curso' : 'Finalizado',
+                  liveCuenta.estado == 'abierta' ? 'En Curso' : 'Finalizado',
                   style: TextStyle(
-                    color: cuenta.estado == 'abierta' ? AppColors.positive : AppColors.negative,
+                    color: liveCuenta.estado == 'abierta' ? AppColors.positive : AppColors.negative,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -164,9 +164,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           Row(
             children: [
-              _resumenStat('Inversión', '${cuenta.inversionTotal.toStringAsFixed(2)}', Icons.arrow_upward, AppColors.negative),
-              _resumenStat('Ingresos', '${cuenta.totalCobrado.toStringAsFixed(2)}', Icons.arrow_downward, AppColors.positive),
-              _resumenStat('Stock', '${cuenta.kilosRestantes.toStringAsFixed(0)} kg', Icons.inventory_2_outlined, AppColors.cream),
+              _resumenStat('Inversión', '${liveCuenta.inversionTotal.toStringAsFixed(2)}', Icons.arrow_upward, AppColors.negative),
+              _resumenStat('Ingresos', '${liveCuenta.totalCobrado.toStringAsFixed(2)}', Icons.arrow_downward, AppColors.positive),
+              _resumenStat('Stock', '${liveCuenta.kilosRestantes.toStringAsFixed(0)} kg', Icons.inventory_2_outlined, AppColors.cream),
             ],
           ),
         ],
@@ -193,12 +193,12 @@ class CuentaDetalleScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildVentaRow(BuildContext context, WidgetRef ref, VentaModel v) {
+  Widget _buildVentaRow(BuildContext context, WidgetRef ref, VentaModel v, CuentaResumenModel liveCuenta) {
     final pagado = v.estadoPago == 'Pagado';
     return GestureDetector(
       onTap: () {
-        if (!pagado && cuenta.estado == 'abierta') {
-          _showAbonoSheet(context, ref, v);
+        if (!pagado) {
+          _showAbonoSheet(context, ref, v, liveCuenta);
         }
       },
       child: Container(
@@ -288,10 +288,10 @@ class CuentaDetalleScreen extends ConsumerWidget {
     );
   }
 
-  void _showNuevaVentaSheet(BuildContext context, WidgetRef ref) {
+  void _showNuevaVentaSheet(BuildContext context, WidgetRef ref, CuentaResumenModel liveCuenta) {
     final clienteCtrl = TextEditingController();
     final kilosCtrl = TextEditingController();
-    final precioCtrl = TextEditingController(text: cuenta.precioVentaKg.toStringAsFixed(2));
+    final precioCtrl = TextEditingController(text: liveCuenta.precioVentaKg.toStringAsFixed(2));
     final totalCtrl = TextEditingController();
     final abonoCtrl = TextEditingController();
     DateTime fechaVenta = DateTime.now();
@@ -332,9 +332,10 @@ class CuentaDetalleScreen extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Nueva Venta', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
-                      Text('Stock: ${cuenta.kilosRestantes.toStringAsFixed(0)} kg', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
                     ],
                   ),
+                  const SizedBox(height: 6),
+                  Text('Stock disponible: ${liveCuenta.kilosRestantes.toStringAsFixed(0)} kg', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
                   const SizedBox(height: 20),
                   _sheetField(clienteCtrl, 'Cliente', 'Nombre del comprador'),
                   const SizedBox(height: 12),
@@ -498,6 +499,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         final kilos = double.tryParse(kilosCtrl.text);
                         final precio = double.tryParse(precioCtrl.text);
                         final total = double.tryParse(totalCtrl.text);
+                        final abono = double.tryParse(abonoCtrl.text) ?? 0.0;
 
                         if (cliente.isEmpty || kilos == null) {
                           ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('Ingresa el cliente y los kilos')));
@@ -507,25 +509,24 @@ class CuentaDetalleScreen extends ConsumerWidget {
                           ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('El total debe ser mayor a 0')));
                           return;
                         }
-                        if (kilos > cuenta.kilosRestantes) {
-                          ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text('Stock insuficiente. Disponible: ${cuenta.kilosRestantes.toStringAsFixed(0)} kg')));
+                        if (kilos > liveCuenta.kilosRestantes) {
+                          ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text('No tienes suficiente stock. Disponible: ${liveCuenta.kilosRestantes.toStringAsFixed(0)} kg')));
                           return;
                         }
-                        // Precio efectivo = total / kilos (en caso de que editaron el total)
-                        final precioEfectivo = precio ?? (total / kilos);
 
                         setModal(() => loading = true);
                         try {
                           await ref.read(ventaRepositoryProvider).registrarVenta(
-                            cuentaId: cuenta.id,
+                            cuentaId: liveCuenta.id,
                             registradoPor: '',
                             cliente: cliente,
                             kilosVendidos: kilos,
-                            precioPorKg: precioEfectivo,
+                            precioPorKg: precio ?? (total / kilos),
                             fechaVenta: fechaVenta,
-                            montoInicialPagado: cobrarAhora ? double.tryParse(abonoCtrl.text) : 0.0,
+                            montoInicialPagado: abono,
                           );
-                          ref.invalidate(ventasProvider(cuenta.id));
+                          ref.invalidate(ventasProvider(liveCuenta.id));
+                          ref.invalidate(cuentasProvider(liveCuenta.proyectoId));
                           if (ctx2.mounted) Navigator.pop(ctx2);
                         } catch (e) {
                           setModal(() => loading = false);
@@ -552,10 +553,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
     );
   }
 
-
-
-  void _showAbonoSheet(BuildContext context, WidgetRef ref, VentaModel venta) {
-    final montoCtrl = TextEditingController();
+  void _showAbonoSheet(BuildContext context, WidgetRef ref, VentaModel venta, CuentaResumenModel liveCuenta) {
+    final montoCtrl = TextEditingController(text: venta.saldoPendiente.toStringAsFixed(2));
     final notaCtrl = TextEditingController();
     bool loading = false;
 
@@ -603,7 +602,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         fechaAbono: DateTime.now(),
                         nota: notaCtrl.text.trim().isEmpty ? null : notaCtrl.text.trim(),
                       );
-                      ref.invalidate(ventasProvider(cuenta.id));
+                      ref.invalidate(ventasProvider(liveCuenta.id));
+                      ref.invalidate(cuentasProvider(liveCuenta.proyectoId));
                       if (ctx2.mounted) Navigator.pop(ctx2);
                     } catch (e) {
                       setModal(() => loading = false);
@@ -626,8 +626,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
     );
   }
 
-  void _showNuevoGastoSheet(BuildContext context, WidgetRef ref) {
-    final descripcionCtrl = TextEditingController();
+  void _showNuevoGastoSheet(BuildContext context, WidgetRef ref, CuentaResumenModel liveCuenta) {
+    final conceptoCtrl = TextEditingController();
     final montoCtrl = TextEditingController();
     bool loading = false;
 
@@ -647,7 +647,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
               const SizedBox(height: 20),
               const Text('Nuevo Gasto', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 20),
-              _sheetField(descripcionCtrl, 'Descripción', 'Ej: Estibadores, Flete, Mallas'),
+              _sheetField(conceptoCtrl, 'Descripción', 'Ej: Estibadores, Flete, Mallas'),
               const SizedBox(height: 12),
               _sheetField(montoCtrl, 'Monto', 'Ej: 150.00', keyboardType: TextInputType.number),
               const SizedBox(height: 24),
@@ -655,22 +655,22 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: loading ? null : () async {
-                    final descripcion = descripcionCtrl.text.trim();
+                    final concepto = conceptoCtrl.text.trim();
                     final monto = double.tryParse(montoCtrl.text);
-                    if (descripcion.isEmpty || monto == null || monto <= 0) {
+                    if (concepto.isEmpty || monto == null || monto <= 0) {
                       ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('Completa descripción y monto')));
                       return;
                     }
                     setModal(() => loading = true);
                     try {
                       await ref.read(gastoRepositoryProvider).registrarGasto(
-                        cuentaId: cuenta.id,
+                        cuentaId: liveCuenta.id,
                         registradoPor: '',
-                        descripcion: descripcion,
+                        concepto: concepto,
                         monto: monto,
-                        fechaGasto: DateTime.now(),
                       );
-                      ref.invalidate(gastosFamilyProvider(cuenta.id));
+                      ref.invalidate(gastosFamilyProvider(liveCuenta.id));
+                      ref.invalidate(cuentasProvider(liveCuenta.proyectoId));
                       if (ctx2.mounted) Navigator.pop(ctx2);
                     } catch (e) {
                       setModal(() => loading = false);
