@@ -25,6 +25,19 @@ services:
       - SECRET_KEY=supersecretkey_change_in_production
     depends_on:
       - db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stackmovi.rule=Host(`api.sparkingcraft.com`) && PathPrefix(`/movil`)"
+      - "traefik.http.routers.stackmovi.entrypoints=websecure"
+      - "traefik.http.routers.stackmovi.tls=true"
+      - "traefik.http.services.stackmovi.loadbalancer.server.port=8000"
+    networks:
+      - dokploy-network
+      - default
 
 volumes:
   postgres_data:
+
+networks:
+  dokploy-network:
+    external: true
