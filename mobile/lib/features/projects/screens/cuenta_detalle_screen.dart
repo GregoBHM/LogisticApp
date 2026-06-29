@@ -666,8 +666,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
                       await ref.read(gastoRepositoryProvider).registrarGasto(
                         cuentaId: liveCuenta.id,
                         registradoPor: '',
-                        concepto: concepto,
+                        descripcion: concepto,
                         monto: monto,
+                        fechaGasto: DateTime.now(),
                       );
                       ref.invalidate(gastosFamilyProvider(liveCuenta.id));
                       ref.invalidate(cuentasProvider(liveCuenta.proyectoId));
