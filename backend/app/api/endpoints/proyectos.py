@@ -47,3 +47,22 @@ async def get_proyectos(
     result = await db.execute(stmt)
     proyectos = result.scalars().all()
     return proyectos
+
+@router.get("/{id}/miembros")
+async def get_miembros(
+    id: str,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    # TODO: Verify current_user is a member of the project
+    stmt = select(ProyectoMiembro, Perfil).join(Perfil, ProyectoMiembro.usuario_id == Perfil.id).filter(ProyectoMiembro.proyecto_id == id)
+    result = await db.execute(stmt)
+    miembros = []
+    for pm, perfil in result.all():
+        miembros.append({
+            "usuario_id": pm.usuario_id,
+            "rol": pm.rol,
+            "nombre": perfil.nombre,
+            "email": perfil.email
+        })
+    return miembros
