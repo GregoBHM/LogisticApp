@@ -457,32 +457,6 @@ class CuentaDetalleScreen extends ConsumerWidget {
     );
   }
 
-  void recalcTotal(void Function(void Function()) setModal) {
-    setModal(() {
-      final k = double.tryParse(kilosCtrl.text) ?? 0;
-      final p = double.tryParse(precioCtrl.text) ?? 0;
-      if (k > 0 && p > 0) {
-        totalCtrl.text = (k * p).toStringAsFixed(2);
-      }
-    });
-  }
-
-  void recalcPrecio(void Function(void Function()) setModal) {
-    setModal(() {
-      final k = double.tryParse(kilosCtrl.text) ?? 0;
-      final t = double.tryParse(totalCtrl.text) ?? 0;
-      if (k > 0 && t > 0) {
-        precioCtrl.text = (t / k).toStringAsFixed(2);
-      }
-    });
-  }
-
-  void setPúblico(void Function(void Function()) setModal) {
-    setModal(() {
-      clienteCtrl.text = 'Público';
-    });
-  }
-
   void _showNuevaVentaSheet(
     BuildContext context,
     WidgetRef ref,
@@ -498,6 +472,32 @@ class CuentaDetalleScreen extends ConsumerWidget {
     DateTime fechaVenta = DateTime.now();
     bool cobrarAhora = true;
     bool loading = false;
+
+    void recalcTotal(void Function(void Function()) setModal) {
+      setModal(() {
+        final k = double.tryParse(kilosCtrl.text) ?? 0;
+        final p = double.tryParse(precioCtrl.text) ?? 0;
+        if (k > 0 && p > 0) {
+          totalCtrl.text = (k * p).toStringAsFixed(2);
+        }
+      });
+    }
+
+    void recalcPrecio(void Function(void Function()) setModal) {
+      setModal(() {
+        final k = double.tryParse(kilosCtrl.text) ?? 0;
+        final t = double.tryParse(totalCtrl.text) ?? 0;
+        if (k > 0 && t > 0) {
+          precioCtrl.text = (t / k).toStringAsFixed(2);
+        }
+      });
+    }
+
+    void setPúblico(void Function(void Function()) setModal) {
+      setModal(() {
+        clienteCtrl.text = 'Público';
+      });
+    }
 
     showModalBottomSheet(
       context: context,
