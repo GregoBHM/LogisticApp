@@ -253,7 +253,164 @@ class ProyectoDetalleScreen extends ConsumerWidget {
   }
 
   void _showNuevaCuentaSheet(BuildContext context, WidgetRef ref) {
-    // Implementación futura del formulario
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Formulario de nueva cuenta (En desarrollo)')));
+    final nombreCtrl = TextEditingController();
+    final productoCtrl = TextEditingController();
+    final cantidadCtrl = TextEditingController();
+    final kgCtrl = TextEditingController();
+    final inversionCtrl = TextEditingController();
+    final precioCtrl = TextEditingController();
+    String tipoUnidad = 'Saco';
+    bool loading = false;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx2, setModal) => Padding(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx2).viewInsets.bottom + 32),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 20),
+                const Text('Nueva Cuenta', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 20),
+                _sheetField(nombreCtrl, 'Nombre de la cuenta', 'Ej: Lote Papa Junio'),
+                const SizedBox(height: 12),
+                _sheetField(productoCtrl, 'Producto', 'Ej: Papa, Cebolla, Maíz'),
+                const SizedBox(height: 12),
+                const Text('Tipo de Unidad', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                const SizedBox(height: 6),
+                Row(
+                  children: ['Saco', 'Caja', 'Jaba', 'Costal'].map((t) {
+                    final sel = tipoUnidad == t;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () => setModal(() => tipoUnidad = t),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: sel ? AppColors.cream : AppColors.background,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: sel ? AppColors.cream : AppColors.border),
+                          ),
+                          child: Text(t, style: TextStyle(color: sel ? AppColors.background : AppColors.textSecondary, fontWeight: FontWeight.w500, fontSize: 13)),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: _sheetField(cantidadCtrl, 'Cantidad', 'Ej: 200', keyboardType: TextInputType.number, onChanged: (_) => setModal(() {}))),
+                    const SizedBox(width: 12),
+                    Expanded(child: _sheetField(kgCtrl, 'Kg por unidad', 'Ej: 50', keyboardType: TextInputType.number, onChanged: (_) => setModal(() {}))),
+                  ],
+                ),
+                if (cantidadCtrl.text.isNotEmpty && kgCtrl.text.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Total: ${((double.tryParse(cantidadCtrl.text) ?? 0) * (double.tryParse(kgCtrl.text) ?? 0)).toStringAsFixed(0)} kg',
+                    style: const TextStyle(color: AppColors.cream, fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: _sheetField(inversionCtrl, 'Inversión Total', 'Ej: 5000', keyboardType: TextInputType.number)),
+                    const SizedBox(width: 12),
+                    Expanded(child: _sheetField(precioCtrl, 'Precio Venta /Kg', 'Ej: 1.80', keyboardType: TextInputType.number)),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: loading ? null : () async {
+                      final nombre = nombreCtrl.text.trim();
+                      final producto = productoCtrl.text.trim();
+                      final cantidad = double.tryParse(cantidadCtrl.text);
+                      final kg = double.tryParse(kgCtrl.text);
+                      final inversion = double.tryParse(inversionCtrl.text);
+                      final precio = double.tryParse(precioCtrl.text);
+
+                      if (nombre.isEmpty || producto.isEmpty || cantidad == null || kg == null || inversion == null || precio == null) {
+                        ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('Completa todos los campos')));
+                        return;
+                      }
+                      if (inversion < 0 || precio <= 0) {
+                        ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('La inversión no puede ser negativa y el precio debe ser mayor a 0')));
+                        return;
+                      }
+
+                      setModal(() => loading = true);
+                      try {
+                        await ref.read(cuentaRepositoryProvider).crearCuenta(
+                          proyectoId: proyecto.id,
+                          nombre: nombre,
+                          producto: producto,
+                          tipoUnidad: tipoUnidad,
+                          cantidadUnidades: cantidad,
+                          kgPorUnidad: kg,
+                          inversionTotal: inversion,
+                          precioVentaKg: precio,
+                          creadoPor: '',
+                          fechaApertura: DateTime.now(),
+                        );
+                        ref.invalidate(cuentasProvider(proyecto.id));
+                        if (ctx2.mounted) Navigator.pop(ctx2);
+                      } catch (e) {
+                        setModal(() => loading = false);
+                        if (ctx2.mounted) ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.cream,
+                      foregroundColor: AppColors.background,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: loading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Crear Cuenta', style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sheetField(TextEditingController ctrl, String label, String hint, {TextInputType? keyboardType, Function(String)? onChanged}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: ctrl,
+          keyboardType: keyboardType,
+          onChanged: onChanged,
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+            filled: true,
+            fillColor: AppColors.background,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.cream)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          ),
+        ),
+      ],
+    );
   }
 }
+
