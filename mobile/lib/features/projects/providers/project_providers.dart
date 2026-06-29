@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/models.dart';
 import '../../../core/network/api_client.dart';
@@ -8,7 +9,9 @@ final proyectoRepositoryProvider = Provider<ProyectoRepository>(
   (ref) => ProyectoRepository(apiClient),
 );
 
-final proyectosProvider = FutureProvider<List<ProyectoModel>>((ref) {
+final proyectosProvider = FutureProvider<List<ProyectoModel>>((ref) async {
+  final timer = Timer(const Duration(seconds: 3), () => ref.invalidateSelf());
+  ref.onDispose(timer.cancel);
   return ref.watch(proyectoRepositoryProvider).getProyectos();
 });
 
@@ -25,17 +28,33 @@ final gastoRepositoryProvider = Provider<GastoRepository>(
 );
 
 final cuentasProvider = FutureProvider.family<List<CuentaResumenModel>, String>(
-  (ref, proyectoId) => ref.watch(cuentaRepositoryProvider).getCuentas(proyectoId),
+  (ref, proyectoId) async {
+    final timer = Timer(const Duration(seconds: 3), () => ref.invalidateSelf());
+    ref.onDispose(timer.cancel);
+    return ref.watch(cuentaRepositoryProvider).getCuentas(proyectoId);
+  },
 );
 
 final ventasProvider = FutureProvider.family<List<VentaModel>, String>(
-  (ref, cuentaId) => ref.watch(ventaRepositoryProvider).getVentas(cuentaId),
+  (ref, cuentaId) async {
+    final timer = Timer(const Duration(seconds: 3), () => ref.invalidateSelf());
+    ref.onDispose(timer.cancel);
+    return ref.watch(ventaRepositoryProvider).getVentas(cuentaId);
+  },
 );
 
 final gastosFamilyProvider = FutureProvider.family<List<GastoModel>, String>(
-  (ref, cuentaId) => ref.watch(gastoRepositoryProvider).getGastos(cuentaId),
+  (ref, cuentaId) async {
+    final timer = Timer(const Duration(seconds: 3), () => ref.invalidateSelf());
+    ref.onDispose(timer.cancel);
+    return ref.watch(gastoRepositoryProvider).getGastos(cuentaId);
+  },
 );
 
 final miembrosProvider = FutureProvider.family<List<Map<String, dynamic>>, String>(
-  (ref, proyectoId) => ref.watch(proyectoRepositoryProvider).getMiembros(proyectoId),
+  (ref, proyectoId) async {
+    final timer = Timer(const Duration(seconds: 3), () => ref.invalidateSelf());
+    ref.onDispose(timer.cancel);
+    return ref.watch(proyectoRepositoryProvider).getMiembros(proyectoId);
+  },
 );
