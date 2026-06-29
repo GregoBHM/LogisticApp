@@ -457,6 +457,32 @@ class CuentaDetalleScreen extends ConsumerWidget {
     );
   }
 
+  void recalcTotal(void Function(void Function()) setModal) {
+    setModal(() {
+      final k = double.tryParse(kilosCtrl.text) ?? 0;
+      final p = double.tryParse(precioCtrl.text) ?? 0;
+      if (k > 0 && p > 0) {
+        totalCtrl.text = (k * p).toStringAsFixed(2);
+      }
+    });
+  }
+
+  void recalcPrecio(void Function(void Function()) setModal) {
+    setModal(() {
+      final k = double.tryParse(kilosCtrl.text) ?? 0;
+      final t = double.tryParse(totalCtrl.text) ?? 0;
+      if (k > 0 && t > 0) {
+        precioCtrl.text = (t / k).toStringAsFixed(2);
+      }
+    });
+  }
+
+  void setPúblico(void Function(void Function()) setModal) {
+    setModal(() {
+      clienteCtrl.text = 'Público';
+    });
+  }
+
   void _showNuevaVentaSheet(
     BuildContext context,
     WidgetRef ref,
@@ -470,18 +496,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
     final totalCtrl = TextEditingController();
     final abonoCtrl = TextEditingController();
     DateTime fechaVenta = DateTime.now();
-    bool cobrarAhora = true; // false = "cobrar después"
+    bool cobrarAhora = true;
     bool loading = false;
-
-    // Auto-update total when kilos or precio change
-    void recalcTotal(Function setState) {
-      final k = double.tryParse(kilosCtrl.text) ?? 0;
-      final p = double.tryParse(precioCtrl.text) ?? 0;
-      if (k > 0 && p > 0) {
-        totalCtrl.text = (k * p).toStringAsFixed(2);
-      }
-      setState(() {});
-    }
 
     showModalBottomSheet(
       context: context,
@@ -543,7 +559,31 @@ class CuentaDetalleScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _sheetField(clienteCtrl, 'Cliente', 'Nombre del comprador'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Cliente', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      GestureDetector(
+                        onTap: () => setPúblico(setModal),
+                        child: const Text('+ Público', style: TextStyle(color: AppColors.cream, fontSize: 12, fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: clienteCtrl,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Nombre del comprador',
+                      hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                      filled: true,
+                      fillColor: AppColors.background,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.cream)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -553,7 +593,10 @@ class CuentaDetalleScreen extends ConsumerWidget {
                           'Kilos',
                           'Ej: 29.8',
                           keyboardType: TextInputType.number,
-                          onChanged: (_) => recalcTotal(setModal),
+                          onChanged: (_) {
+                            recalcTotal(setModal);
+                            recalcPrecio(setModal);
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -607,7 +650,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                       TextField(
                         controller: totalCtrl,
                         keyboardType: TextInputType.number,
-                        onChanged: (_) => setModal(() {}),
+                        onChanged: (_) => recalcPrecio(setModal),
                         style: const TextStyle(
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w600,
@@ -670,7 +713,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                             ),
                             child: Center(
                               child: Text(
-                                'Cobrar ahora',
+                                'Cobro al Instante',
                                 style: TextStyle(
                                   color: cobrarAhora
                                       ? AppColors.background
@@ -705,7 +748,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                             ),
                             child: Center(
                               child: Text(
-                                'Cobrar después',
+                                'A Crédito (Fiado)',
                                 style: TextStyle(
                                   color: !cobrarAhora
                                       ? AppColors.cream
