@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:excel/excel.dart';
+import 'package:excel/excel.dart' as xl;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
@@ -79,18 +79,18 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
         return true;
       }).toList();
 
-      final excel = Excel.createExcel();
+      final excel = xl.Excel.createExcel();
 
       // ---- RESUMEN SHEET ----
       final resumenSheet = excel['Resumen'];
       excel.setDefaultSheet('Resumen');
 
-      void addRow(Sheet sheet, List<String> data, {bool bold = false}) {
+      void addRow(xl.Sheet sheet, List<String> data, {bool bold = false}) {
         final row = sheet.maxRows;
         for (var i = 0; i < data.length; i++) {
-          final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: row));
-          cell.value = TextCellValue(data[i]);
-          if (bold) cell.cellStyle = CellStyle(bold: bold);
+          final cell = sheet.cell(xl.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: row));
+          cell.value = xl.TextCellValue(data[i]);
+          if (bold) cell.cellStyle = xl.CellStyle(bold: bold);
         }
       }
 
