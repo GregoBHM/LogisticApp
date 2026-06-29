@@ -92,8 +92,8 @@ class ProyectoDetalleScreen extends ConsumerWidget {
   }
 
   Widget _buildMemberRow(Map<String, dynamic> m) {
-    final nombre = m['perfiles']?['nombre'] ?? m['usuario_id'] ?? 'Usuario';
-    final email = m['perfiles']?['email'] ?? '';
+    final nombre = m['nombre'] ?? m['usuario_id'] ?? 'Usuario';
+    final email = m['email'] ?? '';
     final rol = m['rol'] ?? 'miembro';
 
     return Padding(
