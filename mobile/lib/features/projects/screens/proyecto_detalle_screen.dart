@@ -20,6 +20,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
         leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 16), onPressed: () => Navigator.pop(context)),
         title: Text(proyecto.nombre),
         actions: [
+          IconButton(icon: const Icon(Icons.edit_outlined, size: 18), onPressed: () => _showEditarProyectoSheet(context, ref)),
           IconButton(icon: const Icon(Icons.person_add_outlined, size: 18), onPressed: () => _showInviteSheet(context)),
         ],
       ),
@@ -73,7 +74,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   );
                 }
                 return Column(
-                  children: cuentas.map((c) => _buildCuentaCard(context, c, proyecto.monedaSimbolo)).toList(),
+                  children: cuentas.map((c) => _buildCuentaCard(context, ref, c, proyecto.monedaSimbolo)).toList(),
                 );
               },
             ),
@@ -137,7 +138,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCuentaCard(BuildContext context, CuentaResumenModel cuenta, String sym) {
+  Widget _buildCuentaCard(BuildContext context, WidgetRef ref, CuentaResumenModel cuenta, String sym) {
     final estaAbierta = cuenta.estado == 'abierta';
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -170,11 +171,24 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: estaAbierta ? AppColors.positiveSubtle : AppColors.negativeSubtle,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: estaAbierta ? AppColors.positive.withOpacity(0.15) : AppColors.negative.withOpacity(0.15)),
+                      border: Border.all(color: estaAbierta ? AppColors.positive.withValues(alpha: 0.15) : AppColors.negative.withValues(alpha: 0.15)),
                     ),
                     child: Text(
                       estaAbierta ? 'Abierta' : 'Cerrada',
                       style: TextStyle(color: estaAbierta ? AppColors.positive : AppColors.negative, fontSize: 11, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => _showEditarCuentaSheet(context, ref, cuenta),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: const Icon(Icons.edit_outlined, size: 14, color: AppColors.textSecondary),
                     ),
                   ),
                 ],
@@ -250,6 +264,236 @@ class ProyectoDetalleScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditarProyectoSheet(BuildContext context, WidgetRef ref) {
+    final nombreCtrl = TextEditingController(text: proyecto.nombre);
+    final descCtrl = TextEditingController(text: proyecto.descripcion ?? '');
+    bool loading = false;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx2, setModal) => Padding(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx2).viewInsets.bottom + 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Editar Proyecto', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 20),
+              _sheetField(nombreCtrl, 'Nombre del proyecto', 'Ej: Exportación Mango 2024'),
+              const SizedBox(height: 12),
+              _sheetField(descCtrl, 'Descripción (Opcional)', 'Detalles del proyecto'),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: loading ? null : () async {
+                    if (nombreCtrl.text.trim().isEmpty) return;
+                    setModal(() => loading = true);
+                    try {
+                      final repo = ref.read(proyectoRepositoryProvider);
+                      await repo.actualizarProyecto(
+                        proyecto.id,
+                        nombre: nombreCtrl.text.trim(),
+                        descripcion: descCtrl.text.trim(),
+                      );
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Proyecto actualizado. Regresa y vuelve a entrar para ver cambios en la barra.')));
+                        ref.invalidate(proyectosProvider);
+                      }
+                    } catch (e) {
+                      setModal(() => loading = false);
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.cream,
+                    foregroundColor: AppColors.background,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.background, strokeWidth: 2)) : const Text('Guardar Cambios'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditarCuentaSheet(BuildContext context, WidgetRef ref, CuentaResumenModel cuenta) {
+    final nombreCtrl = TextEditingController(text: cuenta.nombre);
+    final productoCtrl = TextEditingController(text: cuenta.producto);
+    final cantidadCtrl = TextEditingController(text: cuenta.cantidadUnidades.toString());
+    final kgCtrl = TextEditingController(text: cuenta.kgPorUnidad.toString());
+    final inversionCtrl = TextEditingController(text: cuenta.inversionTotal.toString());
+    final precioCtrl = TextEditingController(text: cuenta.precioVentaKg.toString());
+    String tipoUnidad = cuenta.tipoUnidad;
+    DateTime fechaApertura = cuenta.fechaApertura;
+    bool loading = false;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx2, setModal) => Padding(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx2).viewInsets.bottom + 32),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 20),
+                const Text('Editar Cuenta', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 20),
+                _sheetField(nombreCtrl, 'Nombre de la cuenta', 'Ej: Lote Papa Junio'),
+                const SizedBox(height: 12),
+                _sheetField(productoCtrl, 'Producto', 'Ej: Papa, Cebolla, Maíz'),
+                const SizedBox(height: 12),
+                const Text('Tipo de Unidad', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                const SizedBox(height: 6),
+                Row(
+                  children: ['Saco', 'Caja', 'Jaba', 'Costal'].map((t) {
+                    final sel = tipoUnidad == t;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () => setModal(() => tipoUnidad = t),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: sel ? AppColors.cream : AppColors.background,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: sel ? AppColors.cream : AppColors.border),
+                          ),
+                          child: Text(t, style: TextStyle(color: sel ? AppColors.background : AppColors.textSecondary, fontWeight: FontWeight.w500, fontSize: 13)),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: _sheetField(cantidadCtrl, 'Cantidad', 'Ej: 200', keyboardType: TextInputType.number, onChanged: (_) {
+                      setModal(() {
+                        final cant = double.tryParse(cantidadCtrl.text) ?? 0;
+                        final kgU = double.tryParse(kgCtrl.text) ?? 0;
+                        final inv = double.tryParse(inversionCtrl.text) ?? 0;
+                        final total = cant * kgU;
+                        if (total > 0 && inv > 0) precioCtrl.text = (inv / total).toStringAsFixed(2);
+                      });
+                    })),
+                    const SizedBox(width: 12),
+                    Expanded(child: _sheetField(kgCtrl, 'Kg por unidad', 'Ej: 50', keyboardType: TextInputType.number, onChanged: (_) {
+                      setModal(() {
+                        final cant = double.tryParse(cantidadCtrl.text) ?? 0;
+                        final kgU = double.tryParse(kgCtrl.text) ?? 0;
+                        final inv = double.tryParse(inversionCtrl.text) ?? 0;
+                        final total = cant * kgU;
+                        if (total > 0 && inv > 0) precioCtrl.text = (inv / total).toStringAsFixed(2);
+                      });
+                    })),
+                  ],
+                ),
+                if (cantidadCtrl.text.isNotEmpty && kgCtrl.text.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Total: ${((double.tryParse(cantidadCtrl.text) ?? 0) * (double.tryParse(kgCtrl.text) ?? 0)).toStringAsFixed(0)} kg',
+                    style: const TextStyle(color: AppColors.cream, fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                _sheetField(inversionCtrl, 'Inversión Total', 'Ej: 5000', keyboardType: TextInputType.number, onChanged: (_) {
+                  setModal(() {
+                    final cant = double.tryParse(cantidadCtrl.text) ?? 0;
+                    final kgU = double.tryParse(kgCtrl.text) ?? 0;
+                    final inv = double.tryParse(inversionCtrl.text) ?? 0;
+                    final total = cant * kgU;
+                    if (total > 0 && inv > 0) precioCtrl.text = (inv / total).toStringAsFixed(2);
+                  });
+                }),
+                const SizedBox(height: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Precio de Venta /Kg', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: precioCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: '0.00',
+                        hintStyle: const TextStyle(color: AppColors.textMuted),
+                        filled: true,
+                        fillColor: AppColors.background,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.cream)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: loading ? null : () async {
+                      if (nombreCtrl.text.isEmpty || productoCtrl.text.isEmpty || cantidadCtrl.text.isEmpty || kgCtrl.text.isEmpty || inversionCtrl.text.isEmpty || precioCtrl.text.isEmpty) {
+                        return;
+                      }
+                      setModal(() => loading = true);
+                      try {
+                        final repo = ref.read(cuentaRepositoryProvider);
+                        await repo.actualizarCuenta(
+                          cuenta.id,
+                          nombre: nombreCtrl.text,
+                          producto: productoCtrl.text,
+                          tipoUnidad: tipoUnidad,
+                          cantidadUnidades: double.parse(cantidadCtrl.text),
+                          kgPorUnidad: double.parse(kgCtrl.text),
+                          inversionTotal: double.parse(inversionCtrl.text),
+                          precioVentaKg: double.parse(precioCtrl.text),
+                          fechaApertura: fechaApertura,
+                        );
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ref.invalidate(cuentasProvider(proyecto.id));
+                        }
+                      } catch (e) {
+                        setModal(() => loading = false);
+                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.cream,
+                      foregroundColor: AppColors.background,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.background, strokeWidth: 2)) : const Text('Guardar Cambios'),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

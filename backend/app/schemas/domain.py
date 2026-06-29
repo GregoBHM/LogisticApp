@@ -151,3 +151,36 @@ class GastoResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# --- UPDATE SCHEMAS ---
+
+class ProyectoUpdate(BaseModel):
+    nombre: Optional[str] = None
+    descripcion: Optional[str] = None
+
+class CuentaUpdate(BaseModel):
+    nombre: Optional[str] = None
+    producto: Optional[str] = None
+    tipo_unidad: Optional[str] = None
+    cantidad_unidades: Optional[float] = None
+    kg_por_unidad: Optional[float] = None
+    inversion_total: Optional[float] = None
+    precio_venta_kg: Optional[float] = None
+    fecha_apertura: Optional[date] = None
+
+class VentaUpdate(BaseModel):
+    cliente: Optional[str] = None
+    kilos_vendidos: Optional[float] = None
+    precio_por_kg: Optional[float] = None
+    fecha_venta: Optional[date] = None
+
+class AbonoUpdate(BaseModel):
+    monto: Optional[float] = None
+    nota: Optional[str] = None
+    fecha_abono: Optional[date] = None
+
+class GastoUpdate(BaseModel):
+    descripcion: Optional[str] = None
+    monto: Optional[float] = None
+    fecha_gasto: Optional[date] = None
+

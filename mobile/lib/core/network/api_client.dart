@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'dart:io';
 
 class ApiClient {
   // Cambia `isProduction` a `true` cuando subas el backend a tu servidor.

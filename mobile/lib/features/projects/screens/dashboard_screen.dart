@@ -272,7 +272,7 @@ class DashboardScreen extends ConsumerWidget {
               const Text('Moneda', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
-                value: monedaCodigo,
+                initialValue: monedaCodigo,
                 dropdownColor: AppColors.surface,
                 style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
                 decoration: const InputDecoration(),

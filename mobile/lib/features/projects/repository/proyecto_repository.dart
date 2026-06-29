@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import '../../../core/models/models.dart';
 import '../../../core/network/api_client.dart';
 

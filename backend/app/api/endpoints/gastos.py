@@ -5,9 +5,50 @@ from typing import List
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.domain import Perfil, Cuenta, ProyectoMiembro, Gasto
-from app.schemas.domain import GastoCreate, GastoResponse
+from app.schemas.domain import GastoCreate, GastoResponse, GastoUpdate
 
 router = APIRouter()
+
+@router.put("/{id}", response_model=GastoResponse)
+async def update_gasto(
+    id: str,
+    gasto_in: GastoUpdate,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Gasto).filter(Gasto.id == id))
+    gasto = result.scalars().first()
+    if not gasto:
+        raise HTTPException(status_code=404, detail="Gasto no encontrado")
+        
+    if gasto_in.descripcion is not None:
+        gasto.descripcion = gasto_in.descripcion
+    if gasto_in.monto is not None:
+        gasto.monto = gasto_in.monto
+    if gasto_in.fecha_gasto is not None:
+        gasto.fecha_gasto = gasto_in.fecha_gasto
+        
+    await db.commit()
+    await db.refresh(gasto)
+    
+    g_dict = gasto.__dict__.copy()
+    g_dict['registrado_por_nombre'] = ""
+    return g_dict
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_gasto(
+    id: str,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Gasto).filter(Gasto.id == id))
+    gasto = result.scalars().first()
+    if not gasto:
+        raise HTTPException(status_code=404, detail="Gasto no encontrado")
+        
+    await db.delete(gasto)
+    await db.commit()
+    return None
 
 @router.post("/", response_model=GastoResponse, status_code=status.HTTP_201_CREATED)
 async def create_gasto(

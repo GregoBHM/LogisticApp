@@ -355,7 +355,7 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.cream,
+            activeThumbColor: AppColors.cream,
             activeTrackColor: AppColors.cream.withValues(alpha: 0.3),
             inactiveThumbColor: AppColors.textMuted,
             inactiveTrackColor: AppColors.surface,

@@ -6,9 +6,39 @@ from typing import List
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.domain import Perfil, Proyecto, ProyectoMiembro
-from app.schemas.domain import ProyectoCreate, ProyectoResponse
+from app.schemas.domain import ProyectoCreate, ProyectoResponse, ProyectoUpdate
 
 router = APIRouter()
+
+@router.put("/{id}", response_model=ProyectoResponse)
+async def update_proyecto(
+    id: str,
+    proyecto_in: ProyectoUpdate,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    # Verify project exists and user is owner
+    result = await db.execute(select(Proyecto).filter(Proyecto.id == id))
+    proyecto = result.scalars().first()
+    if not proyecto:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+        
+    stmt = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == id,
+        ProyectoMiembro.usuario_id == current_user.id
+    )
+    miembro = (await db.execute(stmt)).scalars().first()
+    if not miembro or miembro.rol != "dueño":
+        raise HTTPException(status_code=403, detail="No tienes permisos para editar el proyecto")
+        
+    if proyecto_in.nombre is not None:
+        proyecto.nombre = proyecto_in.nombre
+    if proyecto_in.descripcion is not None:
+        proyecto.descripcion = proyecto_in.descripcion
+        
+    await db.commit()
+    await db.refresh(proyecto)
+    return proyecto
 
 @router.post("/", response_model=ProyectoResponse, status_code=status.HTTP_201_CREATED)
 async def create_proyecto(

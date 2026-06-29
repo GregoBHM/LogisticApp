@@ -58,3 +58,11 @@ final miembrosProvider = FutureProvider.family<List<Map<String, dynamic>>, Strin
     return ref.watch(proyectoRepositoryProvider).getMiembros(proyectoId);
   },
 );
+
+final abonosProvider = FutureProvider.family<List<AbonoModel>, String>(
+  (ref, ventaId) async {
+    final timer = Timer(const Duration(seconds: 3), () => ref.invalidateSelf());
+    ref.onDispose(timer.cancel);
+    return ref.watch(ventaRepositoryProvider).getAbonos(ventaId);
+  },
+);

@@ -164,7 +164,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   );
                 }
                 return Column(
-                  children: gastos.map((g) => _buildGastoRow(g)).toList(),
+                  children: gastos.map((g) => _buildGastoRow(context, ref, g, liveCuenta)).toList(),
                 );
               },
             ),
@@ -247,13 +247,13 @@ class CuentaDetalleScreen extends ConsumerWidget {
             children: [
               _resumenStat(
                 'Inversión',
-                '${liveCuenta.inversionTotal.toStringAsFixed(2)}',
+                liveCuenta.inversionTotal.toStringAsFixed(2),
                 Icons.arrow_upward,
                 AppColors.negative,
               ),
               _resumenStat(
                 'Ingresos',
-                '${liveCuenta.totalCobrado.toStringAsFixed(2)}',
+                liveCuenta.totalCobrado.toStringAsFixed(2),
                 Icons.arrow_downward,
                 AppColors.positive,
               ),
@@ -311,9 +311,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
     final pagado = v.estadoPago == 'Pagado';
     return GestureDetector(
       onTap: () {
-        if (!pagado) {
-          _showAbonoSheet(context, ref, v, liveCuenta);
-        }
+        _showOpcionesVentaSheet(context, ref, v, liveCuenta);
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -404,11 +402,15 @@ class CuentaDetalleScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildGastoRow(GastoModel g) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
+  Widget _buildGastoRow(BuildContext context, WidgetRef ref, GastoModel g, CuentaResumenModel liveCuenta) {
+    return GestureDetector(
+      onTap: () {
+        _showOpcionesGastoSheet(context, ref, g, liveCuenta);
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -454,6 +456,490 @@ class CuentaDetalleScreen extends ConsumerWidget {
           ),
         ],
       ),
+    ),
+  );
+}
+
+  void _showOpcionesVentaSheet(BuildContext context, WidgetRef ref, VentaModel v, CuentaResumenModel liveCuenta) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              Text('Opciones de Venta', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Text(v.cliente, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              const SizedBox(height: 20),
+              if (v.estadoPago != 'Pagado')
+                ListTile(
+                  leading: const Icon(Icons.attach_money, color: AppColors.positive),
+                  title: const Text('Registrar Pago', style: TextStyle(color: AppColors.textPrimary)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showAbonoSheet(context, ref, v, liveCuenta);
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.history, color: AppColors.textSecondary),
+                title: const Text('Historial de Pagos', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showAbonosHistorySheet(context, ref, v, liveCuenta);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit_outlined, color: AppColors.cream),
+                title: const Text('Editar Venta', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showEditarVentaSheet(context, ref, v, liveCuenta);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: AppColors.negative),
+                title: const Text('Eliminar Venta', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final confirmar = await showDialog<bool>(
+                    context: context,
+                    builder: (c) => AlertDialog(
+                      backgroundColor: AppColors.surface,
+                      title: const Text('¿Eliminar venta?', style: TextStyle(color: AppColors.textPrimary)),
+                      content: const Text('Se restaurarán los kilos a la cuenta.', style: TextStyle(color: AppColors.textSecondary)),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary))),
+                        TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Eliminar', style: TextStyle(color: AppColors.negative))),
+                      ],
+                    ),
+                  );
+                  if (confirmar == true) {
+                    try {
+                      await ref.read(ventaRepositoryProvider).eliminarVenta(v.id);
+                      if (context.mounted) {
+                        ref.invalidate(ventasProvider(liveCuenta.id));
+                        ref.invalidate(cuentasProvider(liveCuenta.proyectoId));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Venta eliminada')));
+                      }
+                    } catch (e) {
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                    }
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showOpcionesGastoSheet(BuildContext context, WidgetRef ref, GastoModel g, CuentaResumenModel liveCuenta) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Opciones de Gasto', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.edit_outlined, color: AppColors.cream),
+                title: const Text('Editar Gasto', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showEditarGastoSheet(context, ref, g, liveCuenta);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: AppColors.negative),
+                title: const Text('Eliminar Gasto', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final confirmar = await showDialog<bool>(
+                    context: context,
+                    builder: (c) => AlertDialog(
+                      backgroundColor: AppColors.surface,
+                      title: const Text('¿Eliminar gasto?', style: TextStyle(color: AppColors.textPrimary)),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary))),
+                        TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Eliminar', style: TextStyle(color: AppColors.negative))),
+                      ],
+                    ),
+                  );
+                  if (confirmar == true) {
+                    try {
+                      await ref.read(gastoRepositoryProvider).eliminarGasto(g.id);
+                      if (context.mounted) {
+                        ref.invalidate(gastosFamilyProvider(liveCuenta.id));
+                        ref.invalidate(cuentasProvider(liveCuenta.proyectoId));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gasto eliminado')));
+                      }
+                    } catch (e) {
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                    }
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditarVentaSheet(BuildContext context, WidgetRef ref, VentaModel v, CuentaResumenModel liveCuenta) {
+    final clienteCtrl = TextEditingController(text: v.cliente);
+    final kilosCtrl = TextEditingController(text: v.kilosVendidos.toString());
+    final precioCtrl = TextEditingController(text: v.precioPorKg.toString());
+    final totalCtrl = TextEditingController(text: v.totalVenta.toString());
+    bool loading = false;
+
+    void recalcTotal(void Function(void Function()) setModal) {
+      setModal(() {
+        final k = double.tryParse(kilosCtrl.text) ?? 0;
+        final p = double.tryParse(precioCtrl.text) ?? 0;
+        if (k > 0 && p > 0) totalCtrl.text = (k * p).toStringAsFixed(2);
+      });
+    }
+
+    void recalcPrecio(void Function(void Function()) setModal) {
+      setModal(() {
+        final k = double.tryParse(kilosCtrl.text) ?? 0;
+        final t = double.tryParse(totalCtrl.text) ?? 0;
+        if (k > 0 && t > 0) precioCtrl.text = (t / k).toStringAsFixed(2);
+      });
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx2, setModal) => Padding(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx2).viewInsets.bottom + 32),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 20),
+                const Text('Editar Venta', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 20),
+                _sheetField(clienteCtrl, 'Cliente', 'Nombre del comprador'),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: _sheetField(kilosCtrl, 'Kilos', 'Ej: 29.8', keyboardType: TextInputType.number, onChanged: (_) { recalcTotal(setModal); recalcPrecio(setModal); })),
+                    const SizedBox(width: 12),
+                    Expanded(child: _sheetField(precioCtrl, 'Precio /Kg', 'Ej: 3.50', keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => recalcTotal(setModal))),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _sheetField(totalCtrl, 'Total', 'Ej: 104.30', keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => recalcPrecio(setModal)),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: loading ? null : () async {
+                      if (clienteCtrl.text.isEmpty || kilosCtrl.text.isEmpty || precioCtrl.text.isEmpty) return;
+                      setModal(() => loading = true);
+                      try {
+                        await ref.read(ventaRepositoryProvider).actualizarVenta(
+                          v.id,
+                          cliente: clienteCtrl.text,
+                          kilosVendidos: double.parse(kilosCtrl.text),
+                          precioPorKg: double.parse(precioCtrl.text),
+                        );
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ref.invalidate(ventasProvider(liveCuenta.id));
+                          ref.invalidate(cuentasProvider(liveCuenta.proyectoId));
+                        }
+                      } catch (e) {
+                        setModal(() => loading = false);
+                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.cream,
+                      foregroundColor: AppColors.background,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.background, strokeWidth: 2)) : const Text('Guardar Cambios'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAbonosHistorySheet(BuildContext context, WidgetRef ref, VentaModel v, CuentaResumenModel liveCuenta) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (ctx2, scrollController) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Historial de Pagos', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+              Text(v.cliente, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              const SizedBox(height: 20),
+              Expanded(
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final abonosAsync = ref.watch(abonosProvider(v.id));
+                    return abonosAsync.when(
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (e, _) => Center(child: Text('Error: $e')),
+                      data: (abonos) {
+                        if (abonos.isEmpty) {
+                          return const Center(child: Text('No hay pagos registrados', style: TextStyle(color: AppColors.textMuted)));
+                        }
+                        return ListView.builder(
+                          controller: scrollController,
+                          itemCount: abonos.length,
+                          itemBuilder: (context, index) {
+                            final abono = abonos[index];
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text('S/ ${abono.monto.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.positive, fontWeight: FontWeight.w600)),
+                              subtitle: Text('${DateFormat('dd MMM yyyy').format(abono.fechaAbono)} - ${abono.nota ?? ''}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+                                onPressed: () {
+                                  _showOpcionesAbonoSheet(context, ref, abono, v, liveCuenta);
+                                },
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  }
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showOpcionesAbonoSheet(BuildContext context, WidgetRef ref, AbonoModel abono, VentaModel v, CuentaResumenModel liveCuenta) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Opciones de Pago', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.edit_outlined, color: AppColors.cream),
+                title: const Text('Editar Pago', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showEditarAbonoSheet(context, ref, abono, v, liveCuenta);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: AppColors.negative),
+                title: const Text('Eliminar Pago', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final confirmar = await showDialog<bool>(
+                    context: context,
+                    builder: (c) => AlertDialog(
+                      backgroundColor: AppColors.surface,
+                      title: const Text('¿Eliminar pago?', style: TextStyle(color: AppColors.textPrimary)),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary))),
+                        TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Eliminar', style: TextStyle(color: AppColors.negative))),
+                      ],
+                    ),
+                  );
+                  if (confirmar == true) {
+                    try {
+                      await ref.read(ventaRepositoryProvider).eliminarAbono(abono.id);
+                      if (context.mounted) {
+                        ref.invalidate(abonosProvider(v.id));
+                        ref.invalidate(ventasProvider(liveCuenta.id));
+                        ref.invalidate(cuentasProvider(liveCuenta.proyectoId));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pago eliminado')));
+                      }
+                    } catch (e) {
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                    }
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditarAbonoSheet(BuildContext context, WidgetRef ref, AbonoModel abono, VentaModel v, CuentaResumenModel liveCuenta) {
+    final montoCtrl = TextEditingController(text: abono.monto.toString());
+    final notaCtrl = TextEditingController(text: abono.nota ?? '');
+    bool loading = false;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx2, setModal) => Padding(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx2).viewInsets.bottom + 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Editar Pago', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 20),
+              _sheetField(montoCtrl, 'Monto', 'Ej: 50.00', keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+              const SizedBox(height: 12),
+              _sheetField(notaCtrl, 'Nota (Opcional)', 'Ej: Transferencia Yape'),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: loading ? null : () async {
+                    if (montoCtrl.text.isEmpty) return;
+                    setModal(() => loading = true);
+                    try {
+                      await ref.read(ventaRepositoryProvider).actualizarAbono(
+                        abono.id,
+                        monto: double.parse(montoCtrl.text),
+                        nota: notaCtrl.text.trim(),
+                      );
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ref.invalidate(abonosProvider(v.id));
+                        ref.invalidate(ventasProvider(liveCuenta.id));
+                        ref.invalidate(cuentasProvider(liveCuenta.proyectoId));
+                      }
+                    } catch (e) {
+                      setModal(() => loading = false);
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.cream,
+                    foregroundColor: AppColors.background,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.background, strokeWidth: 2)) : const Text('Guardar Cambios'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditarGastoSheet(BuildContext context, WidgetRef ref, GastoModel g, CuentaResumenModel liveCuenta) {
+    final descCtrl = TextEditingController(text: g.descripcion);
+    final montoCtrl = TextEditingController(text: g.monto.toString());
+    bool loading = false;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx2, setModal) => Padding(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx2).viewInsets.bottom + 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Editar Gasto', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 20),
+              _sheetField(descCtrl, 'Descripción', 'Ej: Pasajes, Estibador...'),
+              const SizedBox(height: 12),
+              _sheetField(montoCtrl, 'Monto', 'Ej: 15.50', keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: loading ? null : () async {
+                    if (descCtrl.text.isEmpty || montoCtrl.text.isEmpty) return;
+                    setModal(() => loading = true);
+                    try {
+                      await ref.read(gastoRepositoryProvider).actualizarGasto(
+                        g.id,
+                        descripcion: descCtrl.text,
+                        monto: double.parse(montoCtrl.text),
+                      );
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ref.invalidate(gastosFamilyProvider(liveCuenta.id));
+                        ref.invalidate(cuentasProvider(liveCuenta.proyectoId));
+                      }
+                    } catch (e) {
+                      setModal(() => loading = false);
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.cream,
+                    foregroundColor: AppColors.background,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.background, strokeWidth: 2)) : const Text('Guardar Cambios'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -493,7 +979,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
       });
     }
 
-    void setPúblico(void Function(void Function()) setModal) {
+    void setPublico(void Function(void Function()) setModal) {
       setModal(() {
         clienteCtrl.text = 'Público';
       });
@@ -564,7 +1050,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                     children: [
                       const Text('Cliente', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                       GestureDetector(
-                        onTap: () => setPúblico(setModal),
+                        onTap: () => setPublico(setModal),
                         child: const Text('+ Público', style: TextStyle(color: AppColors.cream, fontSize: 12, fontWeight: FontWeight.w600)),
                       ),
                     ],
@@ -946,10 +1432,11 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                 if (ctx2.mounted) Navigator.pop(ctx2);
                               } catch (e) {
                                 setModal(() => loading = false);
-                                if (ctx2.mounted)
+                                if (ctx2.mounted) {
                                   ScaffoldMessenger.of(ctx2).showSnackBar(
                                     SnackBar(content: Text('Error: $e')),
                                   );
+                                }
                               }
                             },
                       style: ElevatedButton.styleFrom(
@@ -1103,10 +1590,11 @@ class CuentaDetalleScreen extends ConsumerWidget {
                             if (ctx2.mounted) Navigator.pop(ctx2);
                           } catch (e) {
                             setModal(() => loading = false);
-                            if (ctx2.mounted)
+                            if (ctx2.mounted) {
                               ScaffoldMessenger.of(ctx2).showSnackBar(
                                 SnackBar(content: Text('Error: $e')),
                               );
+                            }
                           }
                         },
                   style: ElevatedButton.styleFrom(
@@ -1231,10 +1719,11 @@ class CuentaDetalleScreen extends ConsumerWidget {
                             if (ctx2.mounted) Navigator.pop(ctx2);
                           } catch (e) {
                             setModal(() => loading = false);
-                            if (ctx2.mounted)
+                            if (ctx2.mounted) {
                               ScaffoldMessenger.of(ctx2).showSnackBar(
                                 SnackBar(content: Text('Error: $e')),
                               );
+                            }
                           }
                         },
                   style: ElevatedButton.styleFrom(
@@ -1302,10 +1791,11 @@ class CuentaDetalleScreen extends ConsumerWidget {
                     .cerrarCuenta(cuenta.id, '');
                 if (context.mounted) Navigator.pop(context);
               } catch (e) {
-                if (context.mounted)
+                if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Error al cerrar: $e')),
                   );
+                }
               }
             },
             style: ElevatedButton.styleFrom(

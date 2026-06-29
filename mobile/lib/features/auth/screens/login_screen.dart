@@ -132,7 +132,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 20),
                   ListenableBuilder(
                     listenable: Listenable.merge([_emailCtrl, _passCtrl, _nombreCtrl]),
-                    builder: (_, __) => SizedBox(
+                    builder: (context, child) => SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: (_formValido && !_isLoading) ? _submit : null,

@@ -37,7 +37,9 @@ class _GeoPainter extends CustomPainter {
     });
 
     final path = Path()..moveTo(pts[0].dx, pts[0].dy);
-    for (var p in pts.skip(1)) path.lineTo(p.dx, p.dy);
+    for (var p in pts.skip(1)) {
+      path.lineTo(p.dx, p.dy);
+    }
     path.close();
     canvas.drawPath(path, paint);
 
