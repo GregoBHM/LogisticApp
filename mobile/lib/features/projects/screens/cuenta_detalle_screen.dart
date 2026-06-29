@@ -21,22 +21,39 @@ class CuentaDetalleScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cuentasAsync = ref.watch(cuentasProvider(cuenta.proyectoId));
-    final liveCuenta = cuentasAsync.value?.firstWhere((c) => c.id == cuenta.id, orElse: () => cuenta) ?? cuenta;
+    final liveCuenta =
+        cuentasAsync.value?.firstWhere(
+          (c) => c.id == cuenta.id,
+          orElse: () => cuenta,
+        ) ??
+        cuenta;
 
     final ventasAsync = ref.watch(ventasProvider(liveCuenta.id));
     final gastosAsync = ref.watch(gastosFamilyProvider(liveCuenta.id));
-    
+
     final estaAbierta = liveCuenta.estado == 'abierta';
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 16), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 16),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(cuenta.producto),
         actions: [
           IconButton(
             icon: const Icon(Icons.insert_chart_outlined, size: 20),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => ReportesScreen(cuenta: cuenta, proyectoNombre: proyectoNombre, monedaSimbolo: monedaSimbolo)));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ReportesScreen(
+                    cuenta: cuenta,
+                    proyectoNombre: proyectoNombre,
+                    monedaSimbolo: monedaSimbolo,
+                  ),
+                ),
+              );
             },
           ),
           if (estaAbierta)
@@ -59,11 +76,26 @@ class CuentaDetalleScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Ventas', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: 0.5)),
+                const Text(
+                  'Ventas',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
+                  ),
+                ),
                 if (estaAbierta)
                   GestureDetector(
                     onTap: () => _showNuevaVentaSheet(context, ref, liveCuenta),
-                    child: const Text('+ Nueva Venta', style: TextStyle(color: AppColors.cream, fontSize: 13, fontWeight: FontWeight.w600)),
+                    child: const Text(
+                      '+ Nueva Venta',
+                      style: TextStyle(
+                        color: AppColors.cream,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -73,10 +105,23 @@ class CuentaDetalleScreen extends ConsumerWidget {
               error: (e, _) => Text('Error: $e'),
               data: (ventas) {
                 if (ventas.isEmpty) {
-                  return const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Center(child: Text('No hay ventas registradas', style: TextStyle(color: AppColors.textMuted, fontSize: 13))));
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Text(
+                        'No hay ventas registradas',
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  );
                 }
                 return Column(
-                  children: ventas.map((v) => _buildVentaRow(context, ref, v, liveCuenta)).toList(),
+                  children: ventas
+                      .map((v) => _buildVentaRow(context, ref, v, liveCuenta))
+                      .toList(),
                 );
               },
             ),
@@ -84,11 +129,26 @@ class CuentaDetalleScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Gastos Operativos', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: 0.5)),
+                const Text(
+                  'Gastos Operativos',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
+                  ),
+                ),
                 if (estaAbierta)
                   GestureDetector(
                     onTap: () => _showNuevoGastoSheet(context, ref, liveCuenta),
-                    child: const Text('+ Añadir Gasto', style: TextStyle(color: AppColors.cream, fontSize: 13, fontWeight: FontWeight.w600)),
+                    child: const Text(
+                      '+ Añadir Gasto',
+                      style: TextStyle(
+                        color: AppColors.cream,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -98,7 +158,10 @@ class CuentaDetalleScreen extends ConsumerWidget {
               error: (e, _) => Text('Error: $e'),
               data: (gastos) {
                 if (gastos.isEmpty) {
-                  return const Text('No hay gastos registrados.', style: TextStyle(color: AppColors.textMuted));
+                  return const Text(
+                    'No hay gastos registrados.',
+                    style: TextStyle(color: AppColors.textMuted),
+                  );
                 }
                 return Column(
                   children: gastos.map((g) => _buildGastoRow(g)).toList(),
@@ -111,7 +174,10 @@ class CuentaDetalleScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildResumenCard(BuildContext context, CuentaResumenModel liveCuenta) {
+  Widget _buildResumenCard(
+    BuildContext context,
+    CuentaResumenModel liveCuenta,
+  ) {
     final ganancia = liveCuenta.gananciaReal;
     final esPositivo = ganancia >= 0;
 
@@ -131,12 +197,20 @@ class CuentaDetalleScreen extends ConsumerWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Balance Real', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                  const Text(
+                    'Balance Real',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     '${esPositivo ? '+' : ''}${ganancia.toStringAsFixed(2)}',
                     style: TextStyle(
-                      color: esPositivo ? AppColors.positive : AppColors.negative,
+                      color: esPositivo
+                          ? AppColors.positive
+                          : AppColors.negative,
                       fontSize: 24,
                       fontWeight: FontWeight.w600,
                       letterSpacing: -0.5,
@@ -145,15 +219,22 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: liveCuenta.estado == 'abierta' ? AppColors.positiveSubtle : AppColors.negativeSubtle,
+                  color: liveCuenta.estado == 'abierta'
+                      ? AppColors.positiveSubtle
+                      : AppColors.negativeSubtle,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   liveCuenta.estado == 'abierta' ? 'En Curso' : 'Finalizado',
                   style: TextStyle(
-                    color: liveCuenta.estado == 'abierta' ? AppColors.positive : AppColors.negative,
+                    color: liveCuenta.estado == 'abierta'
+                        ? AppColors.positive
+                        : AppColors.negative,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -164,9 +245,24 @@ class CuentaDetalleScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           Row(
             children: [
-              _resumenStat('Inversión', '${liveCuenta.inversionTotal.toStringAsFixed(2)}', Icons.arrow_upward, AppColors.negative),
-              _resumenStat('Ingresos', '${liveCuenta.totalCobrado.toStringAsFixed(2)}', Icons.arrow_downward, AppColors.positive),
-              _resumenStat('Stock', '${liveCuenta.kilosRestantes.toStringAsFixed(0)} kg', Icons.inventory_2_outlined, AppColors.cream),
+              _resumenStat(
+                'Inversión',
+                '${liveCuenta.inversionTotal.toStringAsFixed(2)}',
+                Icons.arrow_upward,
+                AppColors.negative,
+              ),
+              _resumenStat(
+                'Ingresos',
+                '${liveCuenta.totalCobrado.toStringAsFixed(2)}',
+                Icons.arrow_downward,
+                AppColors.positive,
+              ),
+              _resumenStat(
+                'Stock',
+                '${liveCuenta.kilosRestantes.toStringAsFixed(0)} kg',
+                Icons.inventory_2_outlined,
+                AppColors.cream,
+              ),
             ],
           ),
         ],
@@ -183,17 +279,35 @@ class CuentaDetalleScreen extends ConsumerWidget {
             children: [
               Icon(icon, size: 14, color: color),
               const SizedBox(width: 4),
-              Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 11,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildVentaRow(BuildContext context, WidgetRef ref, VentaModel v, CuentaResumenModel liveCuenta) {
+  Widget _buildVentaRow(
+    BuildContext context,
+    WidgetRef ref,
+    VentaModel v,
+    CuentaResumenModel liveCuenta,
+  ) {
     final pagado = v.estadoPago == 'Pagado';
     return GestureDetector(
       onTap: () {
@@ -218,32 +332,63 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.person_outline, color: AppColors.textSecondary, size: 20),
+              child: const Icon(
+                Icons.person_outline,
+                color: AppColors.textSecondary,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(v.cliente, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w500, fontSize: 14)),
+                  Text(
+                    v.cliente,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text('${v.kilosVendidos.toStringAsFixed(1)} kg a ${v.precioPorKg.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  Text(
+                    '${v.kilosVendidos.toStringAsFixed(1)} kg a ${v.precioPorKg.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
                 ],
               ),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(v.totalVenta.toStringAsFixed(2), style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
+                Text(
+                  v.totalVenta.toStringAsFixed(2),
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: pagado ? AppColors.positiveSubtle : AppColors.cream.withValues(alpha: 0.15),
+                    color: pagado
+                        ? AppColors.positiveSubtle
+                        : AppColors.cream.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    pagado ? 'Pagado' : 'Debe: ${v.saldoPendiente.toStringAsFixed(2)}',
+                    pagado
+                        ? 'Pagado'
+                        : 'Debe: ${v.saldoPendiente.toStringAsFixed(2)}',
                     style: TextStyle(
                       color: pagado ? AppColors.positive : AppColors.cream,
                       fontSize: 10,
@@ -270,28 +415,58 @@ class CuentaDetalleScreen extends ConsumerWidget {
               color: AppColors.negativeSubtle,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.money_off, color: AppColors.negative, size: 14),
+            child: const Icon(
+              Icons.money_off,
+              color: AppColors.negative,
+              size: 14,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(g.descripcion, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w500, fontSize: 13)),
-                Text(DateFormat('dd MMM yyyy', 'es').format(g.fechaGasto), style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                Text(
+                  g.descripcion,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  DateFormat('dd MMM yyyy', 'es').format(g.fechaGasto),
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 11,
+                  ),
+                ),
               ],
             ),
           ),
-          Text('-${g.monto.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.negative, fontWeight: FontWeight.w600, fontSize: 13)),
+          Text(
+            '-${g.monto.toStringAsFixed(2)}',
+            style: const TextStyle(
+              color: AppColors.negative,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  void _showNuevaVentaSheet(BuildContext context, WidgetRef ref, CuentaResumenModel liveCuenta) {
+  void _showNuevaVentaSheet(
+    BuildContext context,
+    WidgetRef ref,
+    CuentaResumenModel liveCuenta,
+  ) {
     final clienteCtrl = TextEditingController();
     final kilosCtrl = TextEditingController();
-    final precioCtrl = TextEditingController(text: liveCuenta.precioVentaKg.toStringAsFixed(2));
+    final precioCtrl = TextEditingController(
+      text: liveCuenta.precioVentaKg.toStringAsFixed(2),
+    );
     final totalCtrl = TextEditingController();
     final abonoCtrl = TextEditingController();
     DateTime fechaVenta = DateTime.now();
@@ -312,40 +487,85 @@ class CuentaDetalleScreen extends ConsumerWidget {
       context: context,
       backgroundColor: AppColors.surface,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx2, setModal) {
           final total = double.tryParse(totalCtrl.text) ?? 0;
-          final abono = cobrarAhora ? (double.tryParse(abonoCtrl.text) ?? 0) : 0.0;
+          final abono = cobrarAhora
+              ? (double.tryParse(abonoCtrl.text) ?? 0)
+              : 0.0;
           final saldo = (total - abono).clamp(0.0, double.infinity);
 
           return Padding(
-            padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx2).viewInsets.bottom + 32),
+            padding: EdgeInsets.fromLTRB(
+              24,
+              20,
+              24,
+              MediaQuery.of(ctx2).viewInsets.bottom + 32,
+            ),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.borderLight,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Nueva Venta', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+                      const Text(
+                        'Nueva Venta',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text('Stock disponible: ${liveCuenta.kilosRestantes.toStringAsFixed(0)} kg', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                  Text(
+                    'Stock disponible: ${liveCuenta.kilosRestantes.toStringAsFixed(0)} kg',
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 13,
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   _sheetField(clienteCtrl, 'Cliente', 'Nombre del comprador'),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: _sheetField(kilosCtrl, 'Kilos', 'Ej: 29.8', keyboardType: TextInputType.number,
-                        onChanged: (_) => recalcTotal(setModal))),
+                      Expanded(
+                        child: _sheetField(
+                          kilosCtrl,
+                          'Kilos',
+                          'Ej: 29.8',
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => recalcTotal(setModal),
+                        ),
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(child: _sheetField(precioCtrl, 'Precio /Kg', 'Ej: 4.00', keyboardType: TextInputType.number,
-                        onChanged: (_) => recalcTotal(setModal))),
+                      Expanded(
+                        child: _sheetField(
+                          precioCtrl,
+                          'Precio /Kg',
+                          'Ej: 4.00',
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => recalcTotal(setModal),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -355,12 +575,31 @@ class CuentaDetalleScreen extends ConsumerWidget {
                     children: [
                       Row(
                         children: [
-                          const Text('Total a cobrar', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                          const Text(
+                            'Total a cobrar',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                            decoration: BoxDecoration(color: AppColors.cream.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
-                            child: const Text('editable', style: TextStyle(color: AppColors.cream, fontSize: 10, fontWeight: FontWeight.w500)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.cream.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              '',
+                              style: TextStyle(
+                                color: AppColors.cream,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -369,16 +608,42 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         controller: totalCtrl,
                         keyboardType: TextInputType.number,
                         onChanged: (_) => setModal(() {}),
-                        style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 16),
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Ej: 120.00',
-                          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                          hintStyle: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 14,
+                          ),
                           filled: true,
                           fillColor: AppColors.background,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.cream, width: 1.5)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                              color: AppColors.border,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                              color: AppColors.border,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                              color: AppColors.cream,
+                              width: 1.5,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 13,
+                          ),
                         ),
                       ),
                     ],
@@ -393,32 +658,63 @@ class CuentaDetalleScreen extends ConsumerWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 11),
                             decoration: BoxDecoration(
-                              color: cobrarAhora ? AppColors.cream : AppColors.background,
+                              color: cobrarAhora
+                                  ? AppColors.cream
+                                  : AppColors.background,
                               borderRadius: BorderRadius.circular(9),
-                              border: Border.all(color: cobrarAhora ? AppColors.cream : AppColors.border),
+                              border: Border.all(
+                                color: cobrarAhora
+                                    ? AppColors.cream
+                                    : AppColors.border,
+                              ),
                             ),
-                            child: Center(child: Text('Cobrar ahora', style: TextStyle(
-                              color: cobrarAhora ? AppColors.background : AppColors.textSecondary,
-                              fontWeight: FontWeight.w600, fontSize: 13,
-                            ))),
+                            child: Center(
+                              child: Text(
+                                'Cobrar ahora',
+                                style: TextStyle(
+                                  color: cobrarAhora
+                                      ? AppColors.background
+                                      : AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => setModal(() { cobrarAhora = false; abonoCtrl.clear(); }),
+                          onTap: () => setModal(() {
+                            cobrarAhora = false;
+                            abonoCtrl.clear();
+                          }),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 11),
                             decoration: BoxDecoration(
-                              color: !cobrarAhora ? AppColors.cream.withValues(alpha: 0.15) : AppColors.background,
+                              color: !cobrarAhora
+                                  ? AppColors.cream.withValues(alpha: 0.15)
+                                  : AppColors.background,
                               borderRadius: BorderRadius.circular(9),
-                              border: Border.all(color: !cobrarAhora ? AppColors.cream : AppColors.border),
+                              border: Border.all(
+                                color: !cobrarAhora
+                                    ? AppColors.cream
+                                    : AppColors.border,
+                              ),
                             ),
-                            child: Center(child: Text('Cobrar después', style: TextStyle(
-                              color: !cobrarAhora ? AppColors.cream : AppColors.textSecondary,
-                              fontWeight: FontWeight.w600, fontSize: 13,
-                            ))),
+                            child: Center(
+                              child: Text(
+                                'Cobrar después',
+                                style: TextStyle(
+                                  color: !cobrarAhora
+                                      ? AppColors.cream
+                                      : AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -426,30 +722,58 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   ),
                   if (cobrarAhora) ...[
                     const SizedBox(height: 12),
-                    _sheetField(abonoCtrl, 'Monto recibido ahora', '0.00', keyboardType: TextInputType.number, onChanged: (_) => setModal(() {})),
+                    _sheetField(
+                      abonoCtrl,
+                      'Monto recibido ahora',
+                      '0.00',
+                      keyboardType: TextInputType.number,
+                      onChanged: (_) => setModal(() {}),
+                    ),
                   ],
                   // RESUMEN SALDO
                   if (total > 0) ...[
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
-                        color: saldo == 0 ? AppColors.positiveSubtle : AppColors.negativeSubtle,
+                        color: saldo == 0
+                            ? AppColors.positiveSubtle
+                            : AppColors.negativeSubtle,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: saldo == 0 ? AppColors.positive.withValues(alpha: 0.3) : AppColors.negative.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: saldo == 0
+                              ? AppColors.positive.withValues(alpha: 0.3)
+                              : AppColors.negative.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(saldo == 0 ? '✓ Pagado completo' : 'Queda pendiente', style: TextStyle(
-                            color: saldo == 0 ? AppColors.positive : AppColors.cream,
-                            fontWeight: FontWeight.w600, fontSize: 13,
-                          )),
                           Text(
-                            saldo == 0 ? 'S/ ${total.toStringAsFixed(2)}' : 'S/ ${saldo.toStringAsFixed(2)}',
+                            saldo == 0
+                                ? '✓ Pagado completo'
+                                : 'Queda pendiente',
                             style: TextStyle(
-                              color: saldo == 0 ? AppColors.positive : AppColors.cream,
-                              fontWeight: FontWeight.w700, fontSize: 15,
+                              color: saldo == 0
+                                  ? AppColors.positive
+                                  : AppColors.cream,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                          Text(
+                            saldo == 0
+                                ? 'S/ ${total.toStringAsFixed(2)}'
+                                : 'S/ ${saldo.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              color: saldo == 0
+                                  ? AppColors.positive
+                                  : AppColors.cream,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
                             ),
                           ),
                         ],
@@ -464,12 +788,16 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         initialDate: fechaVenta,
                         firstDate: DateTime(2020),
                         lastDate: DateTime.now(),
-                        builder: (c, child) => Theme(data: ThemeData.dark(), child: child!),
+                        builder: (c, child) =>
+                            Theme(data: ThemeData.dark(), child: child!),
                       );
                       if (picked != null) setModal(() => fechaVenta = picked);
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.background,
                         borderRadius: BorderRadius.circular(10),
@@ -478,12 +806,32 @@ class CuentaDetalleScreen extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Fecha de venta', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                          const Text(
+                            'Fecha de venta',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
                           Row(
                             children: [
-                              Text(DateFormat('dd MMM yyyy', 'es').format(fechaVenta), style: const TextStyle(color: AppColors.cream, fontWeight: FontWeight.w500, fontSize: 13)),
+                              Text(
+                                DateFormat(
+                                  'dd MMM yyyy',
+                                  'es',
+                                ).format(fechaVenta),
+                                style: const TextStyle(
+                                  color: AppColors.cream,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 13,
+                                ),
+                              ),
                               const SizedBox(width: 6),
-                              const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.cream),
+                              const Icon(
+                                Icons.calendar_today_outlined,
+                                size: 14,
+                                color: AppColors.cream,
+                              ),
                             ],
                           ),
                         ],
@@ -494,54 +842,95 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: loading ? null : () async {
-                        final cliente = clienteCtrl.text.trim();
-                        final kilos = double.tryParse(kilosCtrl.text);
-                        final precio = double.tryParse(precioCtrl.text);
-                        final total = double.tryParse(totalCtrl.text);
-                        final abono = double.tryParse(abonoCtrl.text) ?? 0.0;
+                      onPressed: loading
+                          ? null
+                          : () async {
+                              final cliente = clienteCtrl.text.trim();
+                              final kilos = double.tryParse(kilosCtrl.text);
+                              final precio = double.tryParse(precioCtrl.text);
+                              final total = double.tryParse(totalCtrl.text);
+                              final abono =
+                                  double.tryParse(abonoCtrl.text) ?? 0.0;
 
-                        if (cliente.isEmpty || kilos == null) {
-                          ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('Ingresa el cliente y los kilos')));
-                          return;
-                        }
-                        if (total == null || total <= 0) {
-                          ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('El total debe ser mayor a 0')));
-                          return;
-                        }
-                        if (kilos > liveCuenta.kilosRestantes) {
-                          ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text('No tienes suficiente stock. Disponible: ${liveCuenta.kilosRestantes.toStringAsFixed(0)} kg')));
-                          return;
-                        }
+                              if (cliente.isEmpty || kilos == null) {
+                                ScaffoldMessenger.of(ctx2).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Ingresa el cliente y los kilos',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              if (total == null || total <= 0) {
+                                ScaffoldMessenger.of(ctx2).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'El total debe ser mayor a 0',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              if (kilos > liveCuenta.kilosRestantes) {
+                                ScaffoldMessenger.of(ctx2).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'No tienes suficiente stock. Disponible: ${liveCuenta.kilosRestantes.toStringAsFixed(0)} kg',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
 
-                        setModal(() => loading = true);
-                        try {
-                          await ref.read(ventaRepositoryProvider).registrarVenta(
-                            cuentaId: liveCuenta.id,
-                            registradoPor: '',
-                            cliente: cliente,
-                            kilosVendidos: kilos,
-                            precioPorKg: precio ?? (total / kilos),
-                            fechaVenta: fechaVenta,
-                            montoInicialPagado: abono,
-                          );
-                          ref.invalidate(ventasProvider(liveCuenta.id));
-                          ref.invalidate(cuentasProvider(liveCuenta.proyectoId));
-                          if (ctx2.mounted) Navigator.pop(ctx2);
-                        } catch (e) {
-                          setModal(() => loading = false);
-                          if (ctx2.mounted) ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text('Error: $e')));
-                        }
-                      },
+                              setModal(() => loading = true);
+                              try {
+                                await ref
+                                    .read(ventaRepositoryProvider)
+                                    .registrarVenta(
+                                      cuentaId: liveCuenta.id,
+                                      registradoPor: '',
+                                      cliente: cliente,
+                                      kilosVendidos: kilos,
+                                      precioPorKg: precio ?? (total / kilos),
+                                      fechaVenta: fechaVenta,
+                                      montoInicialPagado: abono,
+                                    );
+                                ref.invalidate(ventasProvider(liveCuenta.id));
+                                ref.invalidate(
+                                  cuentasProvider(liveCuenta.proyectoId),
+                                );
+                                if (ctx2.mounted) Navigator.pop(ctx2);
+                              } catch (e) {
+                                setModal(() => loading = false);
+                                if (ctx2.mounted)
+                                  ScaffoldMessenger.of(ctx2).showSnackBar(
+                                    SnackBar(content: Text('Error: $e')),
+                                  );
+                              }
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.cream,
                         foregroundColor: AppColors.background,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                       child: loading
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          : Text(cobrarAhora ? 'Registrar Venta' : 'Registrar · Cobrar después', style: const TextStyle(fontWeight: FontWeight.w600)),
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(
+                              cobrarAhora
+                                  ? 'Registrar Venta'
+                                  : 'Registrar · Cobrar después',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -553,8 +942,15 @@ class CuentaDetalleScreen extends ConsumerWidget {
     );
   }
 
-  void _showAbonoSheet(BuildContext context, WidgetRef ref, VentaModel venta, CuentaResumenModel liveCuenta) {
-    final montoCtrl = TextEditingController(text: venta.saldoPendiente.toStringAsFixed(2));
+  void _showAbonoSheet(
+    BuildContext context,
+    WidgetRef ref,
+    VentaModel venta,
+    CuentaResumenModel liveCuenta,
+  ) {
+    final montoCtrl = TextEditingController(
+      text: venta.saldoPendiente.toStringAsFixed(2),
+    );
     final notaCtrl = TextEditingController();
     bool loading = false;
 
@@ -562,61 +958,132 @@ class CuentaDetalleScreen extends ConsumerWidget {
       context: context,
       backgroundColor: AppColors.surface,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx2, setModal) => Padding(
-          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx2).viewInsets.bottom + 32),
+          padding: EdgeInsets.fromLTRB(
+            24,
+            20,
+            24,
+            MediaQuery.of(ctx2).viewInsets.bottom + 32,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
               const SizedBox(height: 20),
-              const Text('Registrar Abono', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+              const Text(
+                'Cobrar / Abonar',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 6),
-              Text('Saldo pendiente: ${venta.saldoPendiente.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.cream, fontSize: 13, fontWeight: FontWeight.w500)),
+              Text(
+                'Falta cobrar: ${venta.saldoPendiente.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  color: AppColors.cream,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               const SizedBox(height: 20),
-              _sheetField(montoCtrl, 'Monto del abono', 'Ej: ${venta.saldoPendiente.toStringAsFixed(2)}', keyboardType: TextInputType.number),
+              _sheetField(
+                montoCtrl,
+                'Cantidad a cobrar',
+                'Ej: ${venta.saldoPendiente.toStringAsFixed(2)}',
+                keyboardType: TextInputType.number,
+              ),
               const SizedBox(height: 12),
-              _sheetField(notaCtrl, 'Nota (opcional)', 'Ej: Transferencia, Efectivo...'),
+              _sheetField(
+                notaCtrl,
+                'Nota (opcional)',
+                'Ej: Transferencia, Efectivo...',
+              ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: loading ? null : () async {
-                    final monto = double.tryParse(montoCtrl.text);
-                    if (monto == null || monto <= 0) {
-                      ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('Ingresa un monto válido')));
-                      return;
-                    }
-                    if (monto > venta.saldoPendiente) {
-                      ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text('El abono no puede superar el saldo pendiente (${venta.saldoPendiente.toStringAsFixed(2)})')));
-                      return;
-                    }
-                    setModal(() => loading = true);
-                    try {
-                      await ref.read(ventaRepositoryProvider).registrarAbono(
-                        ventaId: venta.id,
-                        registradoPor: '',
-                        monto: monto,
-                        fechaAbono: DateTime.now(),
-                        nota: notaCtrl.text.trim().isEmpty ? null : notaCtrl.text.trim(),
-                      );
-                      ref.invalidate(ventasProvider(liveCuenta.id));
-                      ref.invalidate(cuentasProvider(liveCuenta.proyectoId));
-                      if (ctx2.mounted) Navigator.pop(ctx2);
-                    } catch (e) {
-                      setModal(() => loading = false);
-                      if (ctx2.mounted) ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text('Error: $e')));
-                    }
-                  },
+                  onPressed: loading
+                      ? null
+                      : () async {
+                          final monto = double.tryParse(montoCtrl.text);
+                          if (monto == null || monto <= 0) {
+                            ScaffoldMessenger.of(ctx2).showSnackBar(
+                              const SnackBar(
+                                content: Text('Ingresa una cantidad válida'),
+                              ),
+                            );
+                            return;
+                          }
+                          if (monto > venta.saldoPendiente) {
+                            ScaffoldMessenger.of(ctx2).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'El cobro no puede superar lo que falta (${venta.saldoPendiente.toStringAsFixed(2)})',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          setModal(() => loading = true);
+                          try {
+                            await ref
+                                .read(ventaRepositoryProvider)
+                                .registrarAbono(
+                                  ventaId: venta.id,
+                                  registradoPor: '',
+                                  monto: monto,
+                                  fechaAbono: DateTime.now(),
+                                  nota: notaCtrl.text.trim().isEmpty
+                                      ? null
+                                      : notaCtrl.text.trim(),
+                                );
+                            ref.invalidate(ventasProvider(liveCuenta.id));
+                            ref.invalidate(
+                              cuentasProvider(liveCuenta.proyectoId),
+                            );
+                            if (ctx2.mounted) Navigator.pop(ctx2);
+                          } catch (e) {
+                            setModal(() => loading = false);
+                            if (ctx2.mounted)
+                              ScaffoldMessenger.of(ctx2).showSnackBar(
+                                SnackBar(content: Text('Error: $e')),
+                              );
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.cream,
                     foregroundColor: AppColors.background,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  child: loading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Registrar Abono', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: loading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          'Registrar Pago',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
                 ),
               ),
             ],
@@ -626,7 +1093,11 @@ class CuentaDetalleScreen extends ConsumerWidget {
     );
   }
 
-  void _showNuevoGastoSheet(BuildContext context, WidgetRef ref, CuentaResumenModel liveCuenta) {
+  void _showNuevoGastoSheet(
+    BuildContext context,
+    WidgetRef ref,
+    CuentaResumenModel liveCuenta,
+  ) {
     final conceptoCtrl = TextEditingController();
     final montoCtrl = TextEditingController();
     bool loading = false;
@@ -635,56 +1106,115 @@ class CuentaDetalleScreen extends ConsumerWidget {
       context: context,
       backgroundColor: AppColors.surface,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx2, setModal) => Padding(
-          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx2).viewInsets.bottom + 32),
+          padding: EdgeInsets.fromLTRB(
+            24,
+            20,
+            24,
+            MediaQuery.of(ctx2).viewInsets.bottom + 32,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
               const SizedBox(height: 20),
-              const Text('Nuevo Gasto', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+              const Text(
+                'Nuevo Gasto',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 20),
-              _sheetField(conceptoCtrl, 'Descripción', 'Ej: Estibadores, Flete, Mallas'),
+              _sheetField(
+                conceptoCtrl,
+                'Descripción',
+                'Ej: Estibadores, Flete, Mallas',
+              ),
               const SizedBox(height: 12),
-              _sheetField(montoCtrl, 'Monto', 'Ej: 150.00', keyboardType: TextInputType.number),
+              _sheetField(
+                montoCtrl,
+                'Monto',
+                'Ej: 150.00',
+                keyboardType: TextInputType.number,
+              ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: loading ? null : () async {
-                    final concepto = conceptoCtrl.text.trim();
-                    final monto = double.tryParse(montoCtrl.text);
-                    if (concepto.isEmpty || monto == null || monto <= 0) {
-                      ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('Completa descripción y monto')));
-                      return;
-                    }
-                    setModal(() => loading = true);
-                    try {
-                      await ref.read(gastoRepositoryProvider).registrarGasto(
-                        cuentaId: liveCuenta.id,
-                        registradoPor: '',
-                        descripcion: concepto,
-                        monto: monto,
-                        fechaGasto: DateTime.now(),
-                      );
-                      ref.invalidate(gastosFamilyProvider(liveCuenta.id));
-                      ref.invalidate(cuentasProvider(liveCuenta.proyectoId));
-                      if (ctx2.mounted) Navigator.pop(ctx2);
-                    } catch (e) {
-                      setModal(() => loading = false);
-                      if (ctx2.mounted) ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text('Error: $e')));
-                    }
-                  },
+                  onPressed: loading
+                      ? null
+                      : () async {
+                          final concepto = conceptoCtrl.text.trim();
+                          final monto = double.tryParse(montoCtrl.text);
+                          if (concepto.isEmpty || monto == null || monto <= 0) {
+                            ScaffoldMessenger.of(ctx2).showSnackBar(
+                              const SnackBar(
+                                content: Text('Completa descripción y monto'),
+                              ),
+                            );
+                            return;
+                          }
+                          setModal(() => loading = true);
+                          try {
+                            await ref
+                                .read(gastoRepositoryProvider)
+                                .registrarGasto(
+                                  cuentaId: liveCuenta.id,
+                                  registradoPor: '',
+                                  descripcion: concepto,
+                                  monto: monto,
+                                  fechaGasto: DateTime.now(),
+                                );
+                            ref.invalidate(gastosFamilyProvider(liveCuenta.id));
+                            ref.invalidate(
+                              cuentasProvider(liveCuenta.proyectoId),
+                            );
+                            if (ctx2.mounted) Navigator.pop(ctx2);
+                          } catch (e) {
+                            setModal(() => loading = false);
+                            if (ctx2.mounted)
+                              ScaffoldMessenger.of(ctx2).showSnackBar(
+                                SnackBar(content: Text('Error: $e')),
+                              );
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.negative,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  child: loading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Registrar Gasto', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: loading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Registrar Gasto',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
                 ),
               ),
             ],
@@ -700,27 +1230,47 @@ class CuentaDetalleScreen extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('¿Cerrar esta cuenta?', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
-        content: const Text('Una cuenta cerrada ya no admitirá nuevas ventas ni gastos. Esta acción no se puede deshacer.', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+        title: const Text(
+          '¿Cerrar esta cuenta?',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: const Text(
+          'Una cuenta cerrada ya no admitirá nuevas ventas ni gastos. Esta acción no se puede deshacer.',
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
               try {
-                await ref.read(cuentaRepositoryProvider).cerrarCuenta(cuenta.id, '');
+                await ref
+                    .read(cuentaRepositoryProvider)
+                    .cerrarCuenta(cuenta.id, '');
                 if (context.mounted) Navigator.pop(context);
               } catch (e) {
-                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al cerrar: $e')));
+                if (context.mounted)
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error al cerrar: $e')),
+                  );
               }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.negative,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('Sí, cerrar'),
           ),
@@ -729,11 +1279,20 @@ class CuentaDetalleScreen extends ConsumerWidget {
     );
   }
 
-  Widget _sheetField(TextEditingController ctrl, String label, String hint, {TextInputType? keyboardType, Function(String)? onChanged}) {
+  Widget _sheetField(
+    TextEditingController ctrl,
+    String label,
+    String hint, {
+    TextInputType? keyboardType,
+    Function(String)? onChanged,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        Text(
+          label,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: ctrl,
@@ -742,17 +1301,31 @@ class CuentaDetalleScreen extends ConsumerWidget {
           style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+            hintStyle: const TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 14,
+            ),
             filled: true,
             fillColor: AppColors.background,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.cream)),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.cream),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
           ),
         ),
       ],
     );
   }
 }
-
