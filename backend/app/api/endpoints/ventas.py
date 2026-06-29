@@ -134,7 +134,7 @@ async def create_venta(
     if not (await db.execute(stmt)).scalars().first():
         raise HTTPException(status_code=403, detail="No eres miembro del proyecto")
 
-    total_venta = venta_in.kilos_vendidos * venta_in.precio_por_kg
+    total_venta = venta_in.total_venta if venta_in.total_venta is not None else (venta_in.kilos_vendidos * venta_in.precio_por_kg)
 
     db_venta = Venta(
         cuenta_id=venta_in.cuenta_id,
@@ -168,7 +168,7 @@ async def create_venta(
     v_dict['registrado_por_nombre'] = current_user.nombre
     v_dict['total_abonado'] = monto_inicial
     v_dict['saldo_pendiente'] = max(total_venta - monto_inicial, 0)
-    v_dict['estado_pago'] = "Pagado" if monto_inicial >= total_venta else ("Parcial" if monto_inicial > 0 else "Pendiente")
+    v_dict['estado_pago'] = "Cancelado" if monto_inicial >= total_venta else ("Parcial" if monto_inicial > 0 else "Pendiente")
     
     return v_dict
 
@@ -207,7 +207,7 @@ async def get_ventas(
         v_dict['registrado_por_nombre'] = p_nombre
         v_dict['total_abonado'] = total_abonado
         v_dict['saldo_pendiente'] = max(v.total_venta - total_abonado, 0)
-        v_dict['estado_pago'] = "Pagado" if total_abonado >= v.total_venta else ("Parcial" if total_abonado > 0 else "Pendiente")
+        v_dict['estado_pago'] = "Cancelado" if total_abonado >= v.total_venta else ("Parcial" if total_abonado > 0 else "Pendiente")
         
         response.append(v_dict)
         

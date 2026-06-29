@@ -7,12 +7,16 @@ class ApiClient {
   
   static const String baseUrl = isProduction 
       ? 'https://api.sparkingcraft.com/movil' 
-      : 'http://127.0.0.1:8000/movil'; // En emulador Android usar: 'http://10.0.2.2:8000/movil'
+      : 'http://192.168.1.8:8000/movil'; // IP de tu PC para probar en tu celular físico
   
   final Dio _dio;
   final FlutterSecureStorage _storage;
 
-  ApiClient() : _dio = Dio(BaseOptions(baseUrl: baseUrl)), _storage = const FlutterSecureStorage() {
+  ApiClient() : _dio = Dio(BaseOptions(
+    baseUrl: baseUrl,
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 10),
+  )), _storage = const FlutterSecureStorage() {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {

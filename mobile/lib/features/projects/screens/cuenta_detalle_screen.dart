@@ -308,7 +308,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
     VentaModel v,
     CuentaResumenModel liveCuenta,
   ) {
-    final pagado = v.estadoPago == 'Pagado';
+    final pagado = v.estadoPago == 'Cancelado' || v.estadoPago == 'Pagado';
     return GestureDetector(
       onTap: () {
         _showOpcionesVentaSheet(context, ref, v, liveCuenta);
@@ -385,8 +385,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   ),
                   child: Text(
                     pagado
-                        ? 'Pagado'
-                        : 'Debe: ${v.saldoPendiente.toStringAsFixed(2)}',
+                        ? 'Cancelado'
+                        : v.estadoPago,
                     style: TextStyle(
                       color: pagado ? AppColors.positive : AppColors.cream,
                       fontSize: 10,
@@ -477,7 +477,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Text(v.cliente, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
               const SizedBox(height: 20),
-              if (v.estadoPago != 'Pagado')
+              if (v.estadoPago != 'Cancelado' && v.estadoPago != 'Pagado')
                 ListTile(
                   leading: const Icon(Icons.attach_money, color: AppColors.positive),
                   title: const Text('Registrar Pago', style: TextStyle(color: AppColors.textPrimary)),
@@ -1283,7 +1283,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         children: [
                           Text(
                             saldo == 0
-                                ? '✓ Pagado completo'
+                                ? '✓ Cancelado'
                                 : 'Queda pendiente',
                             style: TextStyle(
                               color: saldo == 0
@@ -1422,6 +1422,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                       cliente: cliente,
                                       kilosVendidos: kilos,
                                       precioPorKg: precio ?? (total / kilos),
+                                      totalVenta: total,
                                       fechaVenta: fechaVenta,
                                       montoInicialPagado: abono,
                                     );

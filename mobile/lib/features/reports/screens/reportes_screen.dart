@@ -123,9 +123,72 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
         addRow(resumenSheet, []);
       }
 
+      // ---- DASHBOARD CLIENTES ----
+      if (incluyeVentas && ventasFiltradas.isNotEmpty) {
+        final clientesSheet = excel['Dash - Clientes'];
+        addRow(clientesSheet, ['DASHBOARD POR CLIENTES'], bold: true);
+        addRow(clientesSheet, ['Cliente', 'Kilos Totales', 'Monto Total', 'Total Abonado', 'Saldo Pendiente'], bold: true);
+        
+        final mapClientes = <String, Map<String, dynamic>>{};
+        for (final v in ventasFiltradas) {
+          final c = v.cliente;
+          if (!mapClientes.containsKey(c)) {
+            mapClientes[c] = {'kilos': 0.0, 'monto': 0.0, 'abonado': 0.0, 'saldo': 0.0};
+          }
+          mapClientes[c]!['kilos'] = (mapClientes[c]!['kilos'] as double) + v.kilosVendidos;
+          mapClientes[c]!['monto'] = (mapClientes[c]!['monto'] as double) + v.totalVenta;
+          mapClientes[c]!['abonado'] = (mapClientes[c]!['abonado'] as double) + v.totalAbonado;
+          mapClientes[c]!['saldo'] = (mapClientes[c]!['saldo'] as double) + v.saldoPendiente;
+        }
+
+        final listClientes = mapClientes.entries.toList()..sort((a, b) => (b.value['monto'] as double).compareTo(a.value['monto'] as double));
+        
+        for (final entry in listClientes) {
+          addRow(clientesSheet, [
+            entry.key,
+            '${(entry.value['kilos'] as double).toStringAsFixed(1)} kg',
+            '$sym ${(entry.value['monto'] as double).toStringAsFixed(2)}',
+            '$sym ${(entry.value['abonado'] as double).toStringAsFixed(2)}',
+            '$sym ${(entry.value['saldo'] as double).toStringAsFixed(2)}',
+          ]);
+        }
+      }
+
+      // ---- DASHBOARD SEMANAL ----
+      if (incluyeVentas && ventasFiltradas.isNotEmpty) {
+        final semanalSheet = excel['Dash - Semanal'];
+        addRow(semanalSheet, ['DASHBOARD SEMANAL'], bold: true);
+        addRow(semanalSheet, ['Semana / Rango', 'Kilos Totales', 'Monto Total', 'Total Cobrado'], bold: true);
+
+        final mapSemanas = <String, Map<String, dynamic>>{};
+        for (final v in ventasFiltradas) {
+          final monday = v.fechaVenta.subtract(Duration(days: v.fechaVenta.weekday - 1));
+          final sunday = monday.add(const Duration(days: 6));
+          final label = '${fmt.format(monday)} al ${fmt.format(sunday)}';
+          
+          if (!mapSemanas.containsKey(label)) {
+            mapSemanas[label] = { 'kilos': 0.0, 'monto': 0.0, 'cobrado': 0.0, 'lunes': monday };
+          }
+          mapSemanas[label]!['kilos'] = (mapSemanas[label]!['kilos'] as double) + v.kilosVendidos;
+          mapSemanas[label]!['monto'] = (mapSemanas[label]!['monto'] as double) + v.totalVenta;
+          mapSemanas[label]!['cobrado'] = (mapSemanas[label]!['cobrado'] as double) + v.totalAbonado;
+        }
+
+        final listSemanas = mapSemanas.entries.toList()..sort((a, b) => (a.value['lunes'] as DateTime).compareTo(b.value['lunes'] as DateTime));
+
+        for (final entry in listSemanas) {
+          addRow(semanalSheet, [
+            entry.key,
+            '${(entry.value['kilos'] as double).toStringAsFixed(1)} kg',
+            '$sym ${(entry.value['monto'] as double).toStringAsFixed(2)}',
+            '$sym ${(entry.value['cobrado'] as double).toStringAsFixed(2)}',
+          ]);
+        }
+      }
+
       // ---- VENTAS SHEET ----
       if (incluyeVentas && ventasFiltradas.isNotEmpty) {
-        final ventasSheet = excel['Ventas'];
+        final ventasSheet = excel['Detalle Ventas'];
         addRow(ventasSheet, ['Fecha', 'Cliente', 'Kilos', 'Precio/Kg', 'Total', 'Abonado', 'Saldo', 'Estado'], bold: true);
         for (final v in ventasFiltradas) {
           addRow(ventasSheet, [

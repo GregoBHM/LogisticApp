@@ -28,7 +28,7 @@ class CuentaRepository {
     required String creadoPor,
     required DateTime fechaApertura,
   }) async {
-    final res = await _api.client.post('/cuentas', data: {
+    final res = await _api.client.post('/cuentas/', data: {
       'proyecto_id': proyectoId,
       'nombre': nombre.trim(),
       'producto': producto.trim(),
@@ -93,16 +93,18 @@ class VentaRepository {
     required String cliente,
     required double kilosVendidos,
     required double precioPorKg,
+    required double totalVenta,
     required DateTime fechaVenta,
     double? montoInicialPagado,
   }) async {
-    await _api.client.post('/ventas', data: {
+    await _api.client.post('/ventas/', data: {
       'cuenta_id': cuentaId,
       'cliente': cliente.trim(),
       'kilos_vendidos': kilosVendidos,
       'precio_por_kg': precioPorKg,
+      'total_venta': totalVenta,
       'fecha_venta': fechaVenta.toIso8601String().substring(0, 10),
-      'monto_inicial_pagado': montoInicialPagado,
+      ?'monto_inicial_pagado': montoInicialPagado,
     });
   }
 
@@ -179,7 +181,7 @@ class GastoRepository {
     required double monto,
     required DateTime fechaGasto,
   }) async {
-    await _api.client.post('/gastos', data: {
+    await _api.client.post('/gastos/', data: {
       'cuenta_id': cuentaId,
       'descripcion': descripcion.trim(),
       'monto': monto,

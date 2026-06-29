@@ -94,6 +94,7 @@ class VentaCreate(BaseModel):
     precio_por_kg: float
     fecha_venta: date
     monto_inicial_pagado: Optional[float] = None
+    total_venta: Optional[float] = None
 
 class VentaResponse(BaseModel):
     id: str
