@@ -4,7 +4,7 @@ import 'dart:io';
 
 class ApiClient {
   // Cambia `isProduction` a `true` cuando subas el backend a tu servidor.
-  static const bool isProduction = false;
+  static const bool isProduction = true;
   
   static const String baseUrl = isProduction 
       ? 'https://api.sparkingcraft.com/movil' 
