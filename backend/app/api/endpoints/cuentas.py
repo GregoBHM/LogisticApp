@@ -101,3 +101,74 @@ async def get_cuentas(
         cuentas_response.append(c_dict)
         
     return cuentas_response
+
+@router.get("/{cuenta_id}", response_model=CuentaResponse)
+async def get_cuenta(
+    cuenta_id: str,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Cuenta).filter(Cuenta.id == cuenta_id))
+    cuenta = result.scalars().first()
+    if not cuenta:
+        raise HTTPException(status_code=404, detail="Cuenta no encontrada")
+        
+    stmt = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == cuenta.proyecto_id,
+        ProyectoMiembro.usuario_id == current_user.id
+    )
+    if not (await db.execute(stmt)).scalars().first():
+        raise HTTPException(status_code=403, detail="No eres miembro de este proyecto")
+
+    # Get Ventas
+    stmt_v = select(func.sum(Venta.kilos_vendidos), func.sum(Venta.total_venta)).filter(Venta.cuenta_id == cuenta.id)
+    res_v = await db.execute(stmt_v)
+    kilos_vendidos, ingresos_brutos = res_v.first()
+    kilos_vendidos = kilos_vendidos or 0.0
+    ingresos_brutos = ingresos_brutos or 0.0
+    
+    # Get Gastos
+    stmt_g = select(func.sum(Gasto.monto)).filter(Gasto.cuenta_id == cuenta.id)
+    res_g = await db.execute(stmt_g)
+    total_gastos = res_g.scalar() or 0.0
+    
+    # Get Abonos
+    stmt_a = select(func.sum(Abono.monto)).join(Venta).filter(Venta.cuenta_id == cuenta.id)
+    res_a = await db.execute(stmt_a)
+    total_cobrado = res_a.scalar() or 0.0
+    
+    c_dict = cuenta.__dict__.copy()
+    c_dict['kilos_vendidos'] = kilos_vendidos
+    c_dict['ingresos_brutos'] = ingresos_brutos
+    c_dict['kilos_restantes'] = max(cuenta.kilos_totales - kilos_vendidos, 0)
+    c_dict['total_gastos'] = total_gastos
+    c_dict['total_cobrado'] = total_cobrado
+    c_dict['ganancia_real'] = total_cobrado - cuenta.inversion_total - total_gastos
+    
+    return c_dict
+
+@router.put("/{cuenta_id}/cerrar")
+async def cerrar_cuenta(
+    cuenta_id: str,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    from datetime import datetime
+    result = await db.execute(select(Cuenta).filter(Cuenta.id == cuenta_id))
+    cuenta = result.scalars().first()
+    if not cuenta:
+        raise HTTPException(status_code=404, detail="Cuenta no encontrada")
+        
+    stmt = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == cuenta.proyecto_id,
+        ProyectoMiembro.usuario_id == current_user.id
+    )
+    if not (await db.execute(stmt)).scalars().first():
+        raise HTTPException(status_code=403, detail="No eres miembro")
+        
+    cuenta.estado = "cerrada"
+    cuenta.cerrado_por = current_user.id
+    cuenta.fecha_cierre = datetime.utcnow().date()
+    
+    await db.commit()
+    return {"message": "Cuenta cerrada"}
