@@ -49,7 +49,33 @@ class ProyectoRepository {
     return List<Map<String, dynamic>>.from(res.data);
   }
 
-  Future<void> invitarMiembro(String proyectoId, String email) async {
-    await _api.client.post('/proyectos/$proyectoId/invitar', data: {'email': email});
+  Future<void> invitarMiembro(String id, String email) async {
+    await _api.client.post('/proyectos/$id/invitar/', data: {'email': email});
+  }
+
+  Future<List<TransaccionGeneralModel>> getTransacciones(String proyectoId) async {
+    final res = await _api.client.get('/proyectos/$proyectoId/transacciones/');
+    return (res.data as List).map((j) => TransaccionGeneralModel.fromJson(j)).toList();
+  }
+
+  Future<TransaccionGeneralModel> addTransaccion(
+    String proyectoId,
+    String tipo,
+    String descripcion,
+    double monto,
+    DateTime fecha,
+  ) async {
+    final res = await _api.client.post('/proyectos/$proyectoId/transacciones/', data: {
+      'proyecto_id': proyectoId,
+      'tipo': tipo,
+      'descripcion': descripcion,
+      'monto': monto,
+      'fecha_transaccion': fecha.toIso8601String().substring(0, 10),
+    });
+    return TransaccionGeneralModel.fromJson(res.data);
+  }
+
+  Future<void> deleteTransaccion(String id) async {
+    await _api.client.delete('/proyectos/transacciones/$id');
   }
 }

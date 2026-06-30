@@ -376,3 +376,39 @@ class CuentaResumenModel {
   double get ingresosEstimados => kilosTotales * precioVentaKg;
   double get gananciaEstimada => ingresosEstimados - inversionTotal;
 }
+
+class TransaccionGeneralModel {
+  final String id;
+  final String proyectoId;
+  final String registradoPor;
+  final String registradoPorNombre;
+  final String tipo;
+  final String descripcion;
+  final double monto;
+  final DateTime fechaTransaccion;
+  final DateTime createdAt;
+
+  const TransaccionGeneralModel({
+    required this.id,
+    required this.proyectoId,
+    required this.registradoPor,
+    required this.registradoPorNombre,
+    required this.tipo,
+    required this.descripcion,
+    required this.monto,
+    required this.fechaTransaccion,
+    required this.createdAt,
+  });
+
+  factory TransaccionGeneralModel.fromJson(Map<String, dynamic> json) => TransaccionGeneralModel(
+        id: json['id'] as String,
+        proyectoId: json['proyecto_id'] as String,
+        registradoPor: json['registrado_por'] as String,
+        registradoPorNombre: json['registrado_por_nombre'] as String? ?? 'Desconocido',
+        tipo: json['tipo'] as String,
+        descripcion: json['descripcion'] as String,
+        monto: (json['monto'] as num).toDouble(),
+        fechaTransaccion: DateTime.parse(json['fecha_transaccion'] as String),
+        createdAt: DateTime.parse(json['created_at'] as String),
+      );
+}

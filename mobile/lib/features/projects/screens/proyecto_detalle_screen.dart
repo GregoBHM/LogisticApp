@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/models/models.dart';
 import '../providers/project_providers.dart';
 import 'cuenta_detalle_screen.dart';
+import 'caja_general_screen.dart';
 
 class ProyectoDetalleScreen extends ConsumerWidget {
   final ProyectoModel proyecto;
@@ -51,6 +52,42 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                       _buildMemberRow(miembros[i]),
                       if (i < miembros.length - 1) const Divider(color: AppColors.border, indent: 60),
                     ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            GestureDetector(
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CajaGeneralScreen(proyecto: proyecto, monedaSimbolo: proyecto.monedaSimbolo))),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.cream.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.cream.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.account_balance_wallet, color: AppColors.cream, size: 20),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Caja General', style: TextStyle(color: AppColors.cream, fontSize: 15, fontWeight: FontWeight.w600)),
+                          SizedBox(height: 2),
+                          Text('Ingresos y gastos independientes', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: AppColors.textSecondary),
                   ],
                 ),
               ),

@@ -352,7 +352,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${v.kilosVendidos.toStringAsFixed(1)} kg a ${v.precioPorKg.toStringAsFixed(2)}',
+                    '${DateFormat('dd MMM yyyy', 'es').format(v.fechaVenta)} • ${v.kilosVendidos.toStringAsFixed(1)} kg a ${v.precioPorKg.toStringAsFixed(2)}',
                     style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 12,

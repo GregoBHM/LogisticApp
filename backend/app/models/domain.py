@@ -35,6 +35,7 @@ class Proyecto(Base):
     creador = relationship("Perfil", back_populates="proyectos_creados")
     miembros = relationship("ProyectoMiembro", back_populates="proyecto", cascade="all, delete-orphan")
     cuentas = relationship("Cuenta", back_populates="proyecto", cascade="all, delete-orphan")
+    transacciones = relationship("TransaccionGeneral", back_populates="proyecto", cascade="all, delete-orphan")
 
 class ProyectoMiembro(Base):
     __tablename__ = "proyecto_miembros"
@@ -116,4 +117,19 @@ class Gasto(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     cuenta = relationship("Cuenta", back_populates="gastos")
+    perfil = relationship("Perfil")
+
+class TransaccionGeneral(Base):
+    __tablename__ = "transacciones_generales"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    proyecto_id = Column(UUID(as_uuid=False), ForeignKey("proyectos.id", ondelete="CASCADE"), nullable=False)
+    registrado_por = Column(UUID(as_uuid=False), ForeignKey("perfiles.id"), nullable=False)
+    tipo = Column(String, nullable=False)  # 'ingreso' or 'gasto'
+    descripcion = Column(String, nullable=False)
+    monto = Column(Float, nullable=False)
+    fecha_transaccion = Column(Date, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    proyecto = relationship("Proyecto", back_populates="transacciones")
     perfil = relationship("Perfil")

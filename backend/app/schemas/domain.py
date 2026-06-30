@@ -160,6 +160,27 @@ class GastoResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class TransaccionGeneralCreate(BaseModel):
+    proyecto_id: str
+    tipo: str # 'ingreso' or 'gasto'
+    descripcion: str
+    monto: float
+    fecha_transaccion: date
+
+class TransaccionGeneralResponse(BaseModel):
+    id: str
+    proyecto_id: str
+    registrado_por: str
+    registrado_por_nombre: Optional[str] = None
+    tipo: str
+    descripcion: str
+    monto: float
+    fecha_transaccion: date
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 # --- UPDATE SCHEMAS ---
 
 class ProyectoUpdate(BaseModel):
