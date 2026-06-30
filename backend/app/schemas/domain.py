@@ -213,3 +213,29 @@ class GastoUpdate(BaseModel):
     monto: Optional[float] = None
     fecha_gasto: Optional[date] = None
 
+# --- REPORTE SCHEMAS ---
+
+class VentaReporteItem(VentaResponse):
+    cuenta_nombre: str
+
+class GastoReporteItem(GastoResponse):
+    cuenta_nombre: str
+
+class AbonoReporteItem(AbonoResponse):
+    cuenta_nombre: str
+    cliente: Optional[str] = None
+
+class ProyectoReporteResponse(BaseModel):
+    proyecto_id: str
+    proyecto_nombre: str
+    inversion_total: float
+    ingresos_brutos: float
+    total_cobrado: float
+    total_gastos: float
+    ganancia_real: float
+    kilos_totales: float
+    kilos_vendidos: float
+    kilos_restantes: float
+    ventas: List[VentaReporteItem]
+    gastos: List[GastoReporteItem]
+    abonos: List[AbonoReporteItem]

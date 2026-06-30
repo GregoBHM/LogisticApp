@@ -5,8 +5,8 @@ from sqlalchemy.orm import selectinload
 from typing import List
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.models.domain import Perfil, Proyecto, ProyectoMiembro, TransaccionGeneral
-from app.schemas.domain import ProyectoCreate, ProyectoResponse, ProyectoUpdate, ProyectoInvite, TransaccionGeneralCreate, TransaccionGeneralResponse
+from app.models.domain import Perfil, Proyecto, ProyectoMiembro, TransaccionGeneral, Cuenta, Venta, Gasto, Abono
+from app.schemas.domain import ProyectoCreate, ProyectoResponse, ProyectoUpdate, ProyectoInvite, TransaccionGeneralCreate, TransaccionGeneralResponse, ProyectoReporteResponse, VentaReporteItem, GastoReporteItem, AbonoReporteItem
 
 router = APIRouter()
 
@@ -191,9 +191,9 @@ async def get_transacciones(
 
     transacciones = []
     for t, nombre in result.all():
-        t_dict = t.__dict__.copy()
-        t_dict["registrado_por_nombre"] = nombre
-        transacciones.append(t_dict)
+        t_resp = TransaccionGeneralResponse.from_orm(t)
+        t_resp.registrado_por_nombre = nombre
+        transacciones.append(t_resp)
         
     return transacciones
 
@@ -221,3 +221,120 @@ async def delete_transaccion(
     await db.delete(trans)
     await db.commit()
     return None
+
+@router.get("/{id}/reporte_datos", response_model=ProyectoReporteResponse)
+async def get_proyecto_reporte_datos(
+    id: str,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    from sqlalchemy import func
+    
+    # Verificar proyecto y permisos
+    stmt = select(Proyecto).filter(Proyecto.id == id)
+    proyecto = (await db.execute(stmt)).scalars().first()
+    if not proyecto:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+
+    stmt_m = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == id,
+        ProyectoMiembro.usuario_id == current_user.id
+    )
+    if not (await db.execute(stmt_m)).scalars().first():
+        raise HTTPException(status_code=403, detail="No eres miembro de este proyecto")
+
+    # Fetch todas las cuentas del proyecto
+    stmt_c = select(Cuenta).filter(Cuenta.proyecto_id == id)
+    cuentas = (await db.execute(stmt_c)).scalars().all()
+    
+    inversion_total = sum(c.inversion_total for c in cuentas)
+    kilos_totales = sum(c.cantidad_unidades * c.kg_por_unidad for c in cuentas)
+    kilos_vendidos = 0.0
+    ingresos_brutos = 0.0
+    total_cobrado = 0.0
+    total_gastos = 0.0
+
+    ventas_list = []
+    gastos_list = []
+    abonos_list = []
+    
+    if not cuentas:
+        return ProyectoReporteResponse(
+            proyecto_id=str(proyecto.id),
+            proyecto_nombre=proyecto.nombre,
+            inversion_total=0.0,
+            ingresos_brutos=0.0,
+            total_cobrado=0.0,
+            total_gastos=0.0,
+            ganancia_real=0.0,
+            kilos_totales=0.0,
+            kilos_vendidos=0.0,
+            kilos_restantes=0.0,
+            ventas=[],
+            gastos=[],
+            abonos=[]
+        )
+        
+    cuenta_ids = [c.id for c in cuentas]
+    cuenta_nombres = {c.id: c.nombre for c in cuentas}
+    
+    # Gastos
+    stmt_gastos = select(Gasto, Perfil.nombre).join(Perfil).filter(Gasto.cuenta_id.in_(cuenta_ids)).order_by(Gasto.fecha_gasto.desc())
+    gastos_data = (await db.execute(stmt_gastos)).all()
+    
+    for g, p_nombre in gastos_data:
+        g_resp = GastoReporteItem.from_orm(g)
+        g_resp.registrado_por_nombre = p_nombre
+        g_resp.cuenta_nombre = cuenta_nombres.get(g.cuenta_id, "Desconocida")
+        gastos_list.append(g_resp)
+        total_gastos += g.monto
+        
+    # Ventas y Abonos
+    stmt_ventas = select(Venta, Perfil.nombre).join(Perfil).filter(Venta.cuenta_id.in_(cuenta_ids)).order_by(Venta.fecha_venta.desc())
+    ventas_data = (await db.execute(stmt_ventas)).all()
+    
+    for v, p_nombre in ventas_data:
+        stmt_a = select(func.sum(Abono.monto)).filter(Abono.venta_id == v.id)
+        total_abonado_venta = (await db.execute(stmt_a)).scalar() or 0.0
+        
+        v_resp = VentaReporteItem.from_orm(v)
+        v_resp.registrado_por_nombre = p_nombre
+        v_resp.cuenta_nombre = cuenta_nombres.get(v.cuenta_id, "Desconocida")
+        v_resp.total_abonado = total_abonado_venta
+        v_resp.saldo_pendiente = round(max(v.total_venta - total_abonado_venta, 0), 2)
+        v_resp.estado_pago = "Cancelado" if round(total_abonado_venta, 2) >= round(v.total_venta, 2) else ("Parcial" if round(total_abonado_venta, 2) > 0 else "Pendiente")
+        ventas_list.append(v_resp)
+        
+        kilos_vendidos += v.kilos_vendidos
+        ingresos_brutos += v.total_venta
+        
+    # Todos los Abonos detallados
+    stmt_all_abonos = select(Abono, Venta, Perfil.nombre).join(Venta, Abono.venta_id == Venta.id).join(Perfil, Abono.registrado_por == Perfil.id).filter(Venta.cuenta_id.in_(cuenta_ids)).order_by(Abono.fecha_abono.desc())
+    all_abonos_data = (await db.execute(stmt_all_abonos)).all()
+    
+    for ab, v, p_nombre in all_abonos_data:
+        ab_resp = AbonoReporteItem.from_orm(ab)
+        ab_resp.registrado_por_nombre = p_nombre
+        ab_resp.cuenta_nombre = cuenta_nombres.get(v.cuenta_id, "Desconocida")
+        ab_resp.cliente = v.cliente
+        abonos_list.append(ab_resp)
+        total_cobrado += ab.monto
+        
+    kilos_restantes = kilos_totales - kilos_vendidos
+    ganancia_real = total_cobrado - inversion_total - total_gastos
+    
+    return ProyectoReporteResponse(
+        proyecto_id=str(proyecto.id),
+        proyecto_nombre=proyecto.nombre,
+        inversion_total=inversion_total,
+        ingresos_brutos=ingresos_brutos,
+        total_cobrado=total_cobrado,
+        total_gastos=total_gastos,
+        ganancia_real=ganancia_real,
+        kilos_totales=kilos_totales,
+        kilos_vendidos=kilos_vendidos,
+        kilos_restantes=kilos_restantes,
+        ventas=ventas_list,
+        gastos=gastos_list,
+        abonos=abonos_list
+    )

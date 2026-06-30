@@ -6,6 +6,7 @@ import '../../../core/models/models.dart';
 import '../providers/project_providers.dart';
 import 'cuenta_detalle_screen.dart';
 import 'caja_general_screen.dart';
+import '../../reports/screens/reportes_screen.dart';
 
 class ProyectoDetalleScreen extends ConsumerWidget {
   final ProyectoModel proyecto;
@@ -21,6 +22,21 @@ class ProyectoDetalleScreen extends ConsumerWidget {
         leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 16), onPressed: () => Navigator.pop(context)),
         title: Text(proyecto.nombre),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.insert_chart_outlined, size: 20),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ReportesScreen(
+                    proyectoId: proyecto.id,
+                    proyectoNombre: proyecto.nombre,
+                    monedaSimbolo: proyecto.monedaSimbolo,
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(icon: const Icon(Icons.edit_outlined, size: 18), onPressed: () => _showEditarProyectoSheet(context, ref)),
           IconButton(icon: const Icon(Icons.person_add_outlined, size: 18), onPressed: () => _showInviteSheet(context, ref)),
         ],

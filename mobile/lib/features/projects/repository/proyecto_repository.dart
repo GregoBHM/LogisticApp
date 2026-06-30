@@ -78,4 +78,9 @@ class ProyectoRepository {
   Future<void> deleteTransaccion(String id) async {
     await _api.client.delete('/proyectos/transacciones/$id');
   }
+
+  Future<ProyectoReporteData> getReporteDatos(String proyectoId) async {
+    final res = await _api.client.get('/proyectos/$proyectoId/reporte_datos');
+    return ProyectoReporteData.fromJson(res.data);
+  }
 }

@@ -412,3 +412,149 @@ class TransaccionGeneralModel {
         createdAt: DateTime.parse(json['created_at'] as String),
       );
 }
+
+class VentaReporteItemModel extends VentaModel {
+  final String cuentaNombre;
+
+  const VentaReporteItemModel({
+    required super.id,
+    required super.cuentaId,
+    required super.registradoPor,
+    required super.registradoPorNombre,
+    required super.cliente,
+    required super.kilosVendidos,
+    required super.precioPorKg,
+    required super.totalVenta,
+    required super.totalAbonado,
+    required super.saldoPendiente,
+    required super.estadoPago,
+    required super.fechaVenta,
+    required super.createdAt,
+    required this.cuentaNombre,
+  });
+
+  factory VentaReporteItemModel.fromJson(Map<String, dynamic> json) => VentaReporteItemModel(
+        id: json['id'] as String,
+        cuentaId: json['cuenta_id'] as String,
+        registradoPor: json['registrado_por'] as String,
+        registradoPorNombre: json['registrado_por_nombre'] as String? ?? 'Desconocido',
+        cliente: json['cliente'] as String,
+        kilosVendidos: (json['kilos_vendidos'] as num).toDouble(),
+        precioPorKg: (json['precio_por_kg'] as num).toDouble(),
+        totalVenta: (json['total_venta'] as num).toDouble(),
+        totalAbonado: (json['total_abonado'] as num).toDouble(),
+        saldoPendiente: (json['saldo_pendiente'] as num).toDouble(),
+        estadoPago: json['estado_pago'] as String,
+        fechaVenta: DateTime.parse(json['fecha_venta'] as String),
+        createdAt: DateTime.parse(json['created_at'] as String),
+        cuentaNombre: json['cuenta_nombre'] as String,
+      );
+}
+
+class GastoReporteItemModel extends GastoModel {
+  final String cuentaNombre;
+
+  const GastoReporteItemModel({
+    required super.id,
+    required super.cuentaId,
+    required super.registradoPor,
+    required super.registradoPorNombre,
+    required super.descripcion,
+    required super.monto,
+    required super.fechaGasto,
+    required super.createdAt,
+    required this.cuentaNombre,
+  });
+
+  factory GastoReporteItemModel.fromJson(Map<String, dynamic> json) => GastoReporteItemModel(
+        id: json['id'] as String,
+        cuentaId: json['cuenta_id'] as String,
+        registradoPor: json['registrado_por'] as String,
+        registradoPorNombre: json['registrado_por_nombre'] as String? ?? 'Desconocido',
+        descripcion: json['descripcion'] as String,
+        monto: (json['monto'] as num).toDouble(),
+        fechaGasto: DateTime.parse(json['fecha_gasto'] as String),
+        createdAt: DateTime.parse(json['created_at'] as String),
+        cuentaNombre: json['cuenta_nombre'] as String,
+      );
+}
+
+class AbonoReporteItemModel extends AbonoModel {
+  final String cuentaNombre;
+  final String? cliente;
+  final String registradoPorNombre;
+
+  const AbonoReporteItemModel({
+    required super.id,
+    required super.ventaId,
+    required super.registradoPor,
+    required this.registradoPorNombre,
+    required super.monto,
+    required super.fechaAbono,
+    super.nota,
+    required super.createdAt,
+    required this.cuentaNombre,
+    this.cliente,
+  });
+
+  factory AbonoReporteItemModel.fromJson(Map<String, dynamic> json) => AbonoReporteItemModel(
+        id: json['id'] as String,
+        ventaId: json['venta_id'] as String,
+        registradoPor: json['registrado_por'] as String,
+        registradoPorNombre: json['registrado_por_nombre'] as String? ?? 'Desconocido',
+        monto: (json['monto'] as num).toDouble(),
+        fechaAbono: DateTime.parse(json['fecha_abono'] as String),
+        nota: json['nota'] as String?,
+        createdAt: DateTime.parse(json['created_at'] as String),
+        cuentaNombre: json['cuenta_nombre'] as String,
+        cliente: json['cliente'] as String?,
+      );
+}
+
+class ProyectoReporteData {
+  final String proyectoId;
+  final String proyectoNombre;
+  final double inversionTotal;
+  final double ingresosBrutos;
+  final double totalCobrado;
+  final double totalGastos;
+  final double gananciaReal;
+  final double kilosTotales;
+  final double kilosVendidos;
+  final double kilosRestantes;
+  final List<VentaReporteItemModel> ventas;
+  final List<GastoReporteItemModel> gastos;
+  final List<AbonoReporteItemModel> abonos;
+
+  const ProyectoReporteData({
+    required this.proyectoId,
+    required this.proyectoNombre,
+    required this.inversionTotal,
+    required this.ingresosBrutos,
+    required this.totalCobrado,
+    required this.totalGastos,
+    required this.gananciaReal,
+    required this.kilosTotales,
+    required this.kilosVendidos,
+    required this.kilosRestantes,
+    required this.ventas,
+    required this.gastos,
+    required this.abonos,
+  });
+
+  factory ProyectoReporteData.fromJson(Map<String, dynamic> json) => ProyectoReporteData(
+        proyectoId: json['proyecto_id'] as String,
+        proyectoNombre: json['proyecto_nombre'] as String,
+        inversionTotal: (json['inversion_total'] as num).toDouble(),
+        ingresosBrutos: (json['ingresos_brutos'] as num).toDouble(),
+        totalCobrado: (json['total_cobrado'] as num).toDouble(),
+        totalGastos: (json['total_gastos'] as num).toDouble(),
+        gananciaReal: (json['ganancia_real'] as num).toDouble(),
+        kilosTotales: (json['kilos_totales'] as num).toDouble(),
+        kilosVendidos: (json['kilos_vendidos'] as num).toDouble(),
+        kilosRestantes: (json['kilos_restantes'] as num).toDouble(),
+        ventas: (json['ventas'] as List).map((v) => VentaReporteItemModel.fromJson(v)).toList(),
+        gastos: (json['gastos'] as List).map((g) => GastoReporteItemModel.fromJson(g)).toList(),
+        abonos: (json['abonos'] as List).map((a) => AbonoReporteItemModel.fromJson(a)).toList(),
+      );
+}

@@ -82,3 +82,10 @@ final abonosProvider = FutureProvider.family<List<AbonoModel>, String>(
     return ref.watch(ventaRepositoryProvider).getAbonos(ventaId);
   },
 );
+
+final proyectoReporteProvider = FutureProvider.family<ProyectoReporteData, String>(
+  (ref, proyectoId) async {
+    // No timer for report, we want to fetch it fresh when requested
+    return ref.watch(proyectoRepositoryProvider).getReporteDatos(proyectoId);
+  },
+);

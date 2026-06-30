@@ -167,8 +167,8 @@ async def create_venta(
     v_dict = db_venta.__dict__.copy()
     v_dict['registrado_por_nombre'] = current_user.nombre
     v_dict['total_abonado'] = monto_inicial
-    v_dict['saldo_pendiente'] = max(total_venta - monto_inicial, 0)
-    v_dict['estado_pago'] = "Cancelado" if monto_inicial >= total_venta else ("Parcial" if monto_inicial > 0 else "Pendiente")
+    v_dict['saldo_pendiente'] = round(max(total_venta - monto_inicial, 0), 2)
+    v_dict['estado_pago'] = "Cancelado" if round(monto_inicial, 2) >= round(total_venta, 2) else ("Parcial" if round(monto_inicial, 2) > 0 else "Pendiente")
     
     return v_dict
 
@@ -206,8 +206,8 @@ async def get_ventas(
         v_dict = v.__dict__.copy()
         v_dict['registrado_por_nombre'] = p_nombre
         v_dict['total_abonado'] = total_abonado
-        v_dict['saldo_pendiente'] = max(v.total_venta - total_abonado, 0)
-        v_dict['estado_pago'] = "Cancelado" if total_abonado >= v.total_venta else ("Parcial" if total_abonado > 0 else "Pendiente")
+        v_dict['saldo_pendiente'] = round(max(v.total_venta - total_abonado, 0), 2)
+        v_dict['estado_pago'] = "Cancelado" if round(total_abonado, 2) >= round(v.total_venta, 2) else ("Parcial" if round(total_abonado, 2) > 0 else "Pendiente")
         
         response.append(v_dict)
         

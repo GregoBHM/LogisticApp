@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/models.dart';
 import '../providers/project_providers.dart';
-import '../../reports/screens/reportes_screen.dart';
 
 class CuentaDetalleScreen extends ConsumerWidget {
   final CuentaResumenModel cuenta;
@@ -41,21 +40,6 @@ class CuentaDetalleScreen extends ConsumerWidget {
         ),
         title: Text(cuenta.producto),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.insert_chart_outlined, size: 20),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ReportesScreen(
-                    cuenta: cuenta,
-                    proyectoNombre: proyectoNombre,
-                    monedaSimbolo: monedaSimbolo,
-                  ),
-                ),
-              );
-            },
-          ),
           if (estaAbierta)
             IconButton(
               icon: const Icon(Icons.lock_outline, size: 18),
