@@ -137,6 +137,10 @@ class AbonoResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class AbonoDetalleResponse(AbonoResponse):
+    cliente: str
+    registrado_por_nombre: Optional[str] = None
+
 class GastoCreate(BaseModel):
     cuenta_id: str
     descripcion: str

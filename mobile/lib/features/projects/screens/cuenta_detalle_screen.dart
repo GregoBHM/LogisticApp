@@ -67,6 +67,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(ventasProvider(cuenta.id));
           ref.invalidate(gastosFamilyProvider(cuenta.id));
+          ref.invalidate(abonosCuentaProvider(cuenta.id));
         },
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),

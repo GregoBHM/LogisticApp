@@ -236,6 +236,35 @@ class AbonoModel {
       };
 }
 
+class AbonoDetalleModel extends AbonoModel {
+  final String cliente;
+  final String? registradoPorNombre;
+
+  const AbonoDetalleModel({
+    required super.id,
+    required super.ventaId,
+    required super.registradoPor,
+    required super.monto,
+    super.nota,
+    required super.fechaAbono,
+    required super.createdAt,
+    required this.cliente,
+    this.registradoPorNombre,
+  });
+
+  factory AbonoDetalleModel.fromJson(Map<String, dynamic> json) => AbonoDetalleModel(
+        id: json['id'] as String,
+        ventaId: json['venta_id'] as String,
+        registradoPor: json['registrado_por'] as String,
+        monto: (json['monto'] as num).toDouble(),
+        nota: json['nota'] as String?,
+        fechaAbono: DateTime.parse(json['fecha_abono'] as String),
+        createdAt: DateTime.parse(json['created_at'] as String),
+        cliente: json['cliente'] as String,
+        registradoPorNombre: json['registrado_por_nombre'] as String?,
+      );
+}
+
 class GastoModel {
   final String id;
   final String cuentaId;

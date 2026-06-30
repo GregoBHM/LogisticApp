@@ -46,6 +46,11 @@ class CuentaRepository {
     await _api.client.put('/cuentas/$cuentaId/cerrar');
   }
 
+  Future<List<AbonoDetalleModel>> getAbonosCuenta(String cuentaId) async {
+    final res = await _api.client.get('/cuentas/$cuentaId/abonos');
+    return (res.data as List).map((j) => AbonoDetalleModel.fromJson(j)).toList();
+  }
+
   Future<void> actualizarCuenta(
     String id, {
     String? nombre,

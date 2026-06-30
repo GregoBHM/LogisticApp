@@ -30,6 +30,8 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
   bool incluyeGastos = true;
   bool incluyeGanancias = true;
   bool incluyeStock = true;
+  bool incluyeAbonos = true;
+  bool incluyeFlujoCaja = true;
   bool incluyeEquipo = false;
   bool _exporting = false;
 
@@ -63,6 +65,7 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
     try {
       final ventas = ref.read(ventasProvider(widget.cuenta.id)).value ?? [];
       final gastos = ref.read(gastosFamilyProvider(widget.cuenta.id)).value ?? [];
+      final abonos = ref.read(abonosCuentaProvider(widget.cuenta.id)).value ?? [];
       final sym = widget.monedaSimbolo;
       final fmt = DateFormat('dd/MM/yyyy', 'es');
 
@@ -76,6 +79,12 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
       final gastosFiltrados = gastos.where((g) {
         if (_desde != null && g.fechaGasto.isBefore(_desde!)) return false;
         if (_hasta != null && g.fechaGasto.isAfter(_hasta!.add(const Duration(days: 1)))) return false;
+        return true;
+      }).toList();
+
+      final abonosFiltrados = abonos.where((a) {
+        if (_desde != null && a.fechaAbono.isBefore(_desde!)) return false;
+        if (_hasta != null && a.fechaAbono.isAfter(_hasta!.add(const Duration(days: 1)))) return false;
         return true;
       }).toList();
 
@@ -224,6 +233,71 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
         addRow(gastosSheet, ['', 'TOTAL', '$sym ${totalGastos.toStringAsFixed(2)}'], bold: true);
       }
 
+      // ---- HISTORIAL DE ABONOS SHEET ----
+      if (incluyeAbonos && abonosFiltrados.isNotEmpty) {
+        final abonosSheet = excel['Historial de Pagos'];
+        addRow(abonosSheet, ['Fecha', 'Cliente', 'Monto Abonado', 'Registrado por'], bold: true);
+        for (final a in abonosFiltrados) {
+          addRow(abonosSheet, [
+            fmt.format(a.fechaAbono),
+            a.cliente,
+            '$sym ${a.monto.toStringAsFixed(2)}',
+            a.registradoPorNombre ?? '',
+          ]);
+        }
+        addRow(abonosSheet, []);
+        final totalAbonos = abonosFiltrados.fold(0.0, (s, a) => s + a.monto);
+        addRow(abonosSheet, ['', 'TOTAL ABONADO', '$sym ${totalAbonos.toStringAsFixed(2)}'], bold: true);
+      }
+
+      // ---- FLUJO DE CAJA DIARIO SHEET ----
+      if (incluyeFlujoCaja && (abonosFiltrados.isNotEmpty || gastosFiltrados.isNotEmpty)) {
+        final flujoSheet = excel['Flujo de Caja'];
+        addRow(flujoSheet, ['FLUJO DE CAJA (INGRESOS Y EGRESOS)'], bold: true);
+        addRow(flujoSheet, ['Fecha', 'Tipo', 'Descripción / Cliente', 'Ingreso (+)', 'Egreso (-)', 'Saldo del Día'], bold: true);
+
+        // Agrupar todo por día
+        final mapFlujo = <String, Map<String, dynamic>>{};
+        
+        for (final a in abonosFiltrados) {
+          final f = a.fechaAbono.toIso8601String().substring(0, 10);
+          if (!mapFlujo.containsKey(f)) {
+            mapFlujo[f] = {'fecha': a.fechaAbono, 'ingresos': 0.0, 'egresos': 0.0, 'detalles': []};
+          }
+          mapFlujo[f]!['ingresos'] = (mapFlujo[f]!['ingresos'] as double) + a.monto;
+          (mapFlujo[f]!['detalles'] as List).add('Pago de: ${a.cliente} ($sym${a.monto})');
+        }
+
+        for (final g in gastosFiltrados) {
+          final f = g.fechaGasto.toIso8601String().substring(0, 10);
+          if (!mapFlujo.containsKey(f)) {
+            mapFlujo[f] = {'fecha': g.fechaGasto, 'ingresos': 0.0, 'egresos': 0.0, 'detalles': []};
+          }
+          mapFlujo[f]!['egresos'] = (mapFlujo[f]!['egresos'] as double) + g.monto;
+          (mapFlujo[f]!['detalles'] as List).add('Gasto: ${g.descripcion} ($sym${g.monto})');
+        }
+
+        final listFlujo = mapFlujo.entries.toList()..sort((a, b) => (a.value['fecha'] as DateTime).compareTo(b.value['fecha'] as DateTime));
+        
+        double saldoAcumulado = 0.0;
+        for (final entry in listFlujo) {
+          final ingresos = entry.value['ingresos'] as double;
+          final egresos = entry.value['egresos'] as double;
+          saldoAcumulado += (ingresos - egresos);
+          
+          final detallesStr = (entry.value['detalles'] as List).join(' | ');
+          
+          addRow(flujoSheet, [
+            fmt.format(entry.value['fecha'] as DateTime),
+            (ingresos > 0 && egresos > 0) ? 'Mixto' : (ingresos > 0 ? 'Ingreso' : 'Egreso'),
+            detallesStr,
+            ingresos > 0 ? '$sym ${ingresos.toStringAsFixed(2)}' : '',
+            egresos > 0 ? '$sym ${egresos.toStringAsFixed(2)}' : '',
+            '$sym ${saldoAcumulado.toStringAsFixed(2)}',
+          ]);
+        }
+      }
+
       // Save and share
       final bytes = excel.save()!;
       final dir = await getTemporaryDirectory();
@@ -356,9 +430,13 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
             ),
             child: Column(
               children: [
-                _toggleRow('Ventas', incluyeVentas, (v) => setState(() => incluyeVentas = v)),
+                _toggleRow('Ventas (Dashboards y Detalles)', incluyeVentas, (v) => setState(() => incluyeVentas = v)),
                 const Divider(color: AppColors.border, height: 1),
-                _toggleRow('Gastos', incluyeGastos, (v) => setState(() => incluyeGastos = v)),
+                _toggleRow('Historial de Pagos / Abonos', incluyeAbonos, (v) => setState(() => incluyeAbonos = v)),
+                const Divider(color: AppColors.border, height: 1),
+                _toggleRow('Gastos Operativos', incluyeGastos, (v) => setState(() => incluyeGastos = v)),
+                const Divider(color: AppColors.border, height: 1),
+                _toggleRow('Flujo de Caja (Ingresos y Egresos)', incluyeFlujoCaja, (v) => setState(() => incluyeFlujoCaja = v)),
                 const Divider(color: AppColors.border, height: 1),
                 _toggleRow('Ganancias / Financiero', incluyeGanancias, (v) => setState(() => incluyeGanancias = v)),
                 const Divider(color: AppColors.border, height: 1),

@@ -43,6 +43,14 @@ final ventasProvider = FutureProvider.family<List<VentaModel>, String>(
   },
 );
 
+final abonosCuentaProvider = FutureProvider.family<List<AbonoDetalleModel>, String>(
+  (ref, cuentaId) async {
+    final timer = Timer(const Duration(seconds: 3), () => ref.invalidateSelf());
+    ref.onDispose(timer.cancel);
+    return ref.watch(cuentaRepositoryProvider).getAbonosCuenta(cuentaId);
+  },
+);
+
 final gastosFamilyProvider = FutureProvider.family<List<GastoModel>, String>(
   (ref, cuentaId) async {
     final timer = Timer(const Duration(seconds: 3), () => ref.invalidateSelf());

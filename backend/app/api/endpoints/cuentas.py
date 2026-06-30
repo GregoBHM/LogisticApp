@@ -6,7 +6,7 @@ from typing import List
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.domain import Perfil, Cuenta, ProyectoMiembro, Venta, Abono, Gasto
-from app.schemas.domain import CuentaCreate, CuentaResponse, CuentaUpdate
+from app.schemas.domain import CuentaCreate, CuentaResponse, CuentaUpdate, AbonoDetalleResponse
 
 router = APIRouter()
 
@@ -234,3 +234,40 @@ async def cerrar_cuenta(
     
     await db.commit()
     return {"message": "Cuenta cerrada"}
+
+@router.get("/{id}/abonos", response_model=List[AbonoDetalleResponse])
+async def get_cuenta_abonos(
+    id: str,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Cuenta).filter(Cuenta.id == id))
+    cuenta = result.scalars().first()
+    if not cuenta:
+        raise HTTPException(status_code=404, detail="Cuenta no encontrada")
+        
+    stmt = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == cuenta.proyecto_id,
+        ProyectoMiembro.usuario_id == current_user.id
+    )
+    if not (await db.execute(stmt)).scalars().first():
+        raise HTTPException(status_code=403, detail="No eres miembro de este proyecto")
+
+    # Fetch all abonos for this cuenta, joining Venta to get the cliente name and Perfil to get the creator's name
+    stmt_a = (
+        select(Abono, Venta.cliente, Perfil.nombre.label("registrado_por_nombre"))
+        .join(Venta, Abono.venta_id == Venta.id)
+        .outerjoin(Perfil, Abono.registrado_por == Perfil.id)
+        .filter(Venta.cuenta_id == id)
+        .order_by(Abono.fecha_abono.asc(), Abono.created_at.asc())
+    )
+    res_a = await db.execute(stmt_a)
+    
+    abonos_detallados = []
+    for abono, cliente, registrado_por_nombre in res_a.all():
+        abono_dict = abono.__dict__.copy()
+        abono_dict["cliente"] = cliente
+        abono_dict["registrado_por_nombre"] = registrado_por_nombre
+        abonos_detallados.append(abono_dict)
+        
+    return abonos_detallados
