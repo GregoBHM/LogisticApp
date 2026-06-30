@@ -17,7 +17,6 @@ api_app = FastAPI(
     title="StackMovi API",
     description="Backend API para gestión de inventarios y proyectos.",
     version="1.0.0",
-    lifespan=lifespan,
 )
 
 # Configurar CORS para permitir que Flutter Web se conecte
@@ -36,7 +35,7 @@ def read_root():
     return {"message": "StackMovi API is running"}
 
 # Aplicación principal que enruta todo bajo /movil
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
