@@ -21,7 +21,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
         title: Text(proyecto.nombre),
         actions: [
           IconButton(icon: const Icon(Icons.edit_outlined, size: 18), onPressed: () => _showEditarProyectoSheet(context, ref)),
-          IconButton(icon: const Icon(Icons.person_add_outlined, size: 18), onPressed: () => _showInviteSheet(context)),
+          IconButton(icon: const Icon(Icons.person_add_outlined, size: 18), onPressed: () => _showInviteSheet(context, ref)),
         ],
       ),
       body: RefreshIndicator(
@@ -232,38 +232,67 @@ class ProyectoDetalleScreen extends ConsumerWidget {
     );
   }
 
-  void _showInviteSheet(BuildContext context) {
+  void _showInviteSheet(BuildContext context, WidgetRef ref) {
+    final emailCtrl = TextEditingController();
+    bool loading = false;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Invitar Miembro', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 20),
-            const TextField(
-              decoration: InputDecoration(hintText: 'Correo electrónico'),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.cream,
-                  foregroundColor: AppColors.background,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx2, setModal) => Padding(
+          padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx2).viewInsets.bottom + 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Invitar Miembro', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 20),
+              TextField(
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                decoration: const InputDecoration(
+                  hintText: 'Correo electrónico',
+                  hintStyle: TextStyle(color: AppColors.textMuted),
                 ),
-                child: const Text('Enviar Invitación'),
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: loading ? null : () async {
+                    if (emailCtrl.text.isEmpty) return;
+                    setModal(() => loading = true);
+                    try {
+                      await ref.read(proyectoRepositoryProvider).invitarMiembro(proyecto.id, emailCtrl.text.trim());
+                      if (context.mounted) {
+                        Navigator.pop(ctx);
+                        ref.invalidate(miembrosProvider(proyecto.id));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usuario invitado con éxito', style: TextStyle(color: AppColors.textPrimary))));
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        setModal(() => loading = false);
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.cream,
+                    foregroundColor: AppColors.background,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: loading
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.background, strokeWidth: 2))
+                      : const Text('Enviar Invitación'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

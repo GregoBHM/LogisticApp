@@ -48,4 +48,8 @@ class ProyectoRepository {
     final res = await _api.client.get('/proyectos/$proyectoId/miembros');
     return List<Map<String, dynamic>>.from(res.data);
   }
+
+  Future<void> invitarMiembro(String proyectoId, String email) async {
+    await _api.client.post('/proyectos/$proyectoId/invitar', data: {'email': email});
+  }
 }

@@ -104,7 +104,8 @@ class VentaRepository {
       'precio_por_kg': precioPorKg,
       'total_venta': totalVenta,
       'fecha_venta': fechaVenta.toIso8601String().substring(0, 10),
-      ?'monto_inicial_pagado': montoInicialPagado,
+      // ignore: use_null_aware_elements
+      if (montoInicialPagado != null) 'monto_inicial_pagado': montoInicialPagado,
     });
   }
 

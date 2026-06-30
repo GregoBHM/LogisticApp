@@ -33,6 +33,9 @@ class ProyectoCreate(BaseModel):
     moneda_simbolo: str
     moneda_codigo: str
 
+class ProyectoInvite(BaseModel):
+    email: EmailStr
+
 class ProyectoResponse(BaseModel):
     id: str
     nombre: str

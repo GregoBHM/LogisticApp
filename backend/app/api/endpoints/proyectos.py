@@ -6,7 +6,7 @@ from typing import List
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.domain import Perfil, Proyecto, ProyectoMiembro
-from app.schemas.domain import ProyectoCreate, ProyectoResponse, ProyectoUpdate
+from app.schemas.domain import ProyectoCreate, ProyectoResponse, ProyectoUpdate, ProyectoInvite
 
 router = APIRouter()
 
@@ -96,3 +96,44 @@ async def get_miembros(
             "email": perfil.email
         })
     return miembros
+
+@router.post("/{id}/invitar")
+async def invitar_miembro(
+    id: str,
+    invite_in: ProyectoInvite,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    # Verify current_user is dueño of the project
+    stmt = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == id,
+        ProyectoMiembro.usuario_id == current_user.id
+    )
+    miembro = (await db.execute(stmt)).scalars().first()
+    if not miembro or miembro.rol != "dueño":
+        raise HTTPException(status_code=403, detail="No tienes permisos para invitar miembros")
+        
+    # Find user by email
+    stmt = select(Perfil).filter(Perfil.email == invite_in.email)
+    user_to_invite = (await db.execute(stmt)).scalars().first()
+    if not user_to_invite:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado con ese correo electrónico")
+        
+    # Check if user is already a member
+    stmt = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == id,
+        ProyectoMiembro.usuario_id == user_to_invite.id
+    )
+    existing_member = (await db.execute(stmt)).scalars().first()
+    if existing_member:
+        raise HTTPException(status_code=400, detail="El usuario ya es miembro de este proyecto")
+        
+    # Add new member
+    new_member = ProyectoMiembro(
+        proyecto_id=id,
+        usuario_id=user_to_invite.id,
+        rol="vendedor"
+    )
+    db.add(new_member)
+    await db.commit()
+    return {"message": "Usuario invitado con éxito"}
