@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/models.dart';
 import '../providers/project_providers.dart';
+import '../../../core/network/error_handler.dart';
 
 class CajaGeneralScreen extends ConsumerWidget {
   final ProyectoModel proyecto;
@@ -42,7 +43,7 @@ class CajaGeneralScreen extends ConsumerWidget {
         },
         child: transaccionesAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          error: (e, _) => Center(child: Text(ErrorHandler.parse(e))),
           data: (transacciones) {
             double totalIngresos = 0;
             double totalGastos = 0;
@@ -259,7 +260,7 @@ class CajaGeneralScreen extends ConsumerWidget {
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.negative),
+                    SnackBar(content: Text(ErrorHandler.parse(e)), backgroundColor: AppColors.negative),
                   );
                 }
               }
@@ -452,7 +453,7 @@ class _NuevaTransaccionFormState extends ConsumerState<_NuevaTransaccionForm> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.negative),
+          SnackBar(content: Text(ErrorHandler.parse(e)), backgroundColor: AppColors.negative),
         );
       }
     } finally {

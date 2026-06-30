@@ -13,12 +13,30 @@ class AuthRepository {
   final _authStateController = StreamController<AuthState>.broadcast();
 
   AuthRepository(this._api) {
+    _api.onUnauthorized = () {
+      _authStateController.add(const AuthState(isAuthenticated: false));
+    };
     _init();
   }
 
   Future<void> _init() async {
     final hasToken = await _api.hasToken();
     _authStateController.add(AuthState(isAuthenticated: hasToken));
+    if (hasToken) {
+      _refreshTokenSilently();
+    }
+  }
+
+  Future<void> _refreshTokenSilently() async {
+    try {
+      final res = await _api.client.post('/auth/refresh');
+      final token = res.data['access_token'];
+      if (token != null) {
+        await _api.saveToken(token);
+      }
+    } catch (e) {
+      // If refresh fails, onUnauthorized will catch it if it's 401
+    }
   }
 
   bool get isLoggedIn => true; // Replaced by stream

@@ -43,3 +43,9 @@ async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
 @router.get("/me", response_model=PerfilResponse)
 async def get_me(current_user: Perfil = Depends(get_current_user)):
     return current_user
+
+@router.post("/refresh", response_model=Token)
+async def refresh_token(current_user: Perfil = Depends(get_current_user)):
+    # Emit a new token valid for another full cycle
+    access_token = create_access_token(subject=current_user.id)
+    return {"access_token": access_token, "token_type": "bearer"}

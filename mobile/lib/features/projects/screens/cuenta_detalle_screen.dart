@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/models.dart';
 import '../providers/project_providers.dart';
+import '../../../core/network/error_handler.dart';
 
 class CuentaDetalleScreen extends ConsumerWidget {
   final CuentaResumenModel cuenta;
@@ -87,7 +88,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             ventasAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text('Error: $e'),
+              error: (e, _) => Text(ErrorHandler.parse(e)),
               data: (ventas) {
                 if (ventas.isEmpty) {
                   return const Padding(
@@ -140,7 +141,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             gastosAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text('Error: $e'),
+              error: (e, _) => Text(ErrorHandler.parse(e)),
               data: (gastos) {
                 if (gastos.isEmpty) {
                   return const Text(
@@ -513,7 +514,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Venta eliminada')));
                       }
                     } catch (e) {
-                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
                     }
                   }
                 },
@@ -573,7 +574,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gasto eliminado')));
                       }
                     } catch (e) {
-                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
                     }
                   }
                 },
@@ -657,7 +658,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         }
                       } catch (e) {
                         setModal(() => loading = false);
-                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -705,7 +706,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                     final abonosAsync = ref.watch(abonosProvider(v.id));
                     return abonosAsync.when(
                       loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (e, _) => Center(child: Text('Error: $e')),
+                      error: (e, _) => Center(child: Text(ErrorHandler.parse(e))),
                       data: (abonos) {
                         if (abonos.isEmpty) {
                           return const Center(child: Text('No hay pagos registrados', style: TextStyle(color: AppColors.textMuted)));
@@ -789,7 +790,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pago eliminado')));
                       }
                     } catch (e) {
-                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
                     }
                   }
                 },
@@ -846,7 +847,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                       }
                     } catch (e) {
                       setModal(() => loading = false);
-                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -909,7 +910,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                       }
                     } catch (e) {
                       setModal(() => loading = false);
-                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -1420,7 +1421,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                 setModal(() => loading = false);
                                 if (ctx2.mounted) {
                                   ScaffoldMessenger.of(ctx2).showSnackBar(
-                                    SnackBar(content: Text('Error: $e')),
+                                    SnackBar(content: Text(ErrorHandler.parse(e))),
                                   );
                                 }
                               }
@@ -1578,7 +1579,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                             setModal(() => loading = false);
                             if (ctx2.mounted) {
                               ScaffoldMessenger.of(ctx2).showSnackBar(
-                                SnackBar(content: Text('Error: $e')),
+                                SnackBar(content: Text(ErrorHandler.parse(e))),
                               );
                             }
                           }
@@ -1707,7 +1708,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                             setModal(() => loading = false);
                             if (ctx2.mounted) {
                               ScaffoldMessenger.of(ctx2).showSnackBar(
-                                SnackBar(content: Text('Error: $e')),
+                                SnackBar(content: Text(ErrorHandler.parse(e))),
                               );
                             }
                           }

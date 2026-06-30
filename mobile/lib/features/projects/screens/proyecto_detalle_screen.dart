@@ -7,6 +7,7 @@ import '../providers/project_providers.dart';
 import 'cuenta_detalle_screen.dart';
 import 'caja_general_screen.dart';
 import '../../reports/screens/reportes_screen.dart';
+import '../../../core/network/error_handler.dart';
 
 class ProyectoDetalleScreen extends ConsumerWidget {
   final ProyectoModel proyecto;
@@ -59,13 +60,13 @@ class ProyectoDetalleScreen extends ConsumerWidget {
               ),
               child: miembrosAsync.when(
                 loading: () => const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator())),
-                error: (e, _) => Padding(padding: const EdgeInsets.all(20), child: Text('Error: $e')),
+                error: (e, _) => Padding(padding: const EdgeInsets.all(20), child: Text(ErrorHandler.parse(e))),
                 data: (miembros) => Column(
                   children: [
                     if (miembros.isEmpty)
                       const Padding(padding: EdgeInsets.all(20), child: Text('No hay miembros', style: TextStyle(color: AppColors.textMuted))),
                     for (int i = 0; i < miembros.length; i++) ...[
-                      _buildMemberRow(miembros[i]),
+                      _buildMemberRow(context, ref, miembros[i]),
                       if (i < miembros.length - 1) const Divider(color: AppColors.border, indent: 60),
                     ],
                   ],
@@ -113,7 +114,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
             const SizedBox(height: 10),
             cuentasAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => Center(child: Text(ErrorHandler.parse(e))),
               data: (cuentas) {
                 if (cuentas.isEmpty) {
                   return Container(
@@ -145,16 +146,17 @@ class ProyectoDetalleScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMemberRow(Map<String, dynamic> m) {
+  Widget _buildMemberRow(BuildContext context, WidgetRef ref, Map<String, dynamic> m) {
     String nombre = m['nombre'] ?? '';
     if (nombre.trim().isEmpty) {
       nombre = 'Usuario (${m['email'] ?? 'Sin correo'})';
     }
     final email = m['email'] ?? '';
     final rol = m['rol'] ?? 'miembro';
+    final usuarioId = m['id'] ?? m['usuario_id']; // Depending on what backend returns for user ID
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: Row(
         children: [
           Container(
@@ -186,7 +188,146 @@ class ProyectoDetalleScreen extends ConsumerWidget {
             ),
             child: Text(rol, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
           ),
+          if (usuarioId != null)
+            IconButton(
+              icon: const Icon(Icons.more_vert, color: AppColors.textSecondary, size: 18),
+              onPressed: () => _showOpcionesMiembroSheet(context, ref, m),
+            ),
         ],
+      ),
+    );
+  }
+
+  void _showOpcionesMiembroSheet(BuildContext context, WidgetRef ref, Map<String, dynamic> m) {
+    final usuarioId = m['id'] ?? m['usuario_id'];
+    if (usuarioId == null) return;
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Opciones de Miembro', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Text(m['email'] ?? '', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.admin_panel_settings_outlined, color: AppColors.cream),
+                title: const Text('Cambiar Rol', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showCambiarRolSheet(context, ref, m);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.person_remove_outlined, color: AppColors.negative),
+                title: const Text('Expulsar Miembro', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final confirmar = await showDialog<bool>(
+                    context: context,
+                    builder: (c) => AlertDialog(
+                      backgroundColor: AppColors.surface,
+                      title: const Text('¿Expulsar miembro?', style: TextStyle(color: AppColors.textPrimary)),
+                      content: const Text('Este usuario ya no tendrá acceso al proyecto.', style: TextStyle(color: AppColors.textSecondary)),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary))),
+                        TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Expulsar', style: TextStyle(color: AppColors.negative))),
+                      ],
+                    ),
+                  );
+                  if (confirmar == true) {
+                    try {
+                      await ref.read(proyectoRepositoryProvider).expulsarMiembro(proyecto.id, usuarioId.toString());
+                      if (context.mounted) {
+                        ref.invalidate(miembrosProvider(proyecto.id));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Miembro expulsado')));
+                      }
+                    } catch (e) {
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
+                    }
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCambiarRolSheet(BuildContext context, WidgetRef ref, Map<String, dynamic> m) {
+    String rolActual = m['rol'] ?? 'miembro';
+    final usuarioId = m['id'] ?? m['usuario_id'];
+    bool loading = false;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx2, setModal) => Padding(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx2).viewInsets.bottom + 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Seleccionar Rol', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 20),
+              Column(
+                children: ['admin', 'miembro'].map((r) {
+                  final isSel = rolActual == r;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      isSel ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                      color: isSel ? AppColors.cream : AppColors.textSecondary,
+                    ),
+                    title: Text(r, style: TextStyle(color: isSel ? AppColors.textPrimary : AppColors.textSecondary)),
+                    onTap: () => setModal(() => rolActual = r),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: loading ? null : () async {
+                    setModal(() => loading = true);
+                    try {
+                      await ref.read(proyectoRepositoryProvider).cambiarRolMiembro(proyecto.id, usuarioId.toString(), rolActual);
+                      if (context.mounted) {
+                        Navigator.pop(ctx);
+                        ref.invalidate(miembrosProvider(proyecto.id));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rol actualizado')));
+                      }
+                    } catch (e) {
+                      setModal(() => loading = false);
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.cream,
+                    foregroundColor: AppColors.background,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.background, strokeWidth: 2)) : const Text('Guardar'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -329,7 +470,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     } catch (e) {
                       if (context.mounted) {
                         setModal(() => loading = false);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
                       }
                     }
                   },
@@ -396,7 +537,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                       }
                     } catch (e) {
                       setModal(() => loading = false);
-                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -561,7 +702,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                         }
                       } catch (e) {
                         setModal(() => loading = false);
-                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -793,7 +934,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                         if (ctx2.mounted) Navigator.pop(ctx2);
                       } catch (e) {
                         setModal(() => loading = false);
-                        if (ctx2.mounted) ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text('Error: $e')));
+                        if (ctx2.mounted) ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
                       }
                     },
                     style: ElevatedButton.styleFrom(

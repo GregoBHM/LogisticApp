@@ -53,6 +53,17 @@ class ProyectoRepository {
     await _api.client.post('/proyectos/$id/invitar/', data: {'email': email});
   }
 
+  Future<void> cambiarRolMiembro(String proyectoId, String usuarioId, String nuevoRol) async {
+    await _api.client.put(
+      '/proyectos/$proyectoId/miembros/$usuarioId',
+      data: {'rol': nuevoRol},
+    );
+  }
+
+  Future<void> expulsarMiembro(String proyectoId, String usuarioId) async {
+    await _api.client.delete('/proyectos/$proyectoId/miembros/$usuarioId');
+  }
+
   Future<List<TransaccionGeneralModel>> getTransacciones(String proyectoId) async {
     final res = await _api.client.get('/proyectos/$proyectoId/transacciones/');
     return (res.data as List).map((j) => TransaccionGeneralModel.fromJson(j)).toList();

@@ -11,6 +11,7 @@ class ApiClient {
   
   final Dio _dio;
   final FlutterSecureStorage _storage;
+  void Function()? onUnauthorized;
 
   ApiClient() : _dio = Dio(BaseOptions(
     baseUrl: baseUrl,
@@ -29,6 +30,9 @@ class ApiClient {
         onError: (DioException e, handler) async {
           if (e.response?.statusCode == 401) {
             await _storage.delete(key: 'jwt_token');
+            if (onUnauthorized != null) {
+              onUnauthorized!();
+            }
           }
           return handler.next(e);
         }

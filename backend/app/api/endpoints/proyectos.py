@@ -6,7 +6,7 @@ from typing import List
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.domain import Perfil, Proyecto, ProyectoMiembro, TransaccionGeneral, Cuenta, Venta, Gasto, Abono
-from app.schemas.domain import ProyectoCreate, ProyectoResponse, ProyectoUpdate, ProyectoInvite, TransaccionGeneralCreate, TransaccionGeneralResponse, ProyectoReporteResponse, VentaReporteItem, GastoReporteItem, AbonoReporteItem
+from app.schemas.domain import ProyectoCreate, ProyectoResponse, ProyectoUpdate, ProyectoInvite, ProyectoMiembroUpdate, TransaccionGeneralCreate, TransaccionGeneralResponse, ProyectoReporteResponse, VentaReporteItem, GastoReporteItem, AbonoReporteItem
 
 router = APIRouter()
 
@@ -137,6 +137,65 @@ async def invitar_miembro(
     db.add(new_member)
     await db.commit()
     return {"message": "Usuario invitado con éxito"}
+
+@router.put("/{id}/miembros/{usuario_id}")
+async def update_miembro_rol(
+    id: str,
+    usuario_id: str,
+    rol_update: ProyectoMiembroUpdate,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    stmt = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == id,
+        ProyectoMiembro.usuario_id == current_user.id
+    )
+    requester = (await db.execute(stmt)).scalars().first()
+    if not requester or requester.rol != "dueño":
+        raise HTTPException(status_code=403, detail="Solo el dueño puede cambiar roles")
+        
+    stmt_target = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == id,
+        ProyectoMiembro.usuario_id == usuario_id
+    )
+    target_member = (await db.execute(stmt_target)).scalars().first()
+    if not target_member:
+        raise HTTPException(status_code=404, detail="Miembro no encontrado en el proyecto")
+    if target_member.rol == "dueño":
+        raise HTTPException(status_code=403, detail="No puedes cambiar el rol del dueño")
+        
+    target_member.rol = rol_update.rol
+    await db.commit()
+    return {"message": "Rol actualizado con éxito"}
+
+@router.delete("/{id}/miembros/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_miembro(
+    id: str,
+    usuario_id: str,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    stmt = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == id,
+        ProyectoMiembro.usuario_id == current_user.id
+    )
+    requester = (await db.execute(stmt)).scalars().first()
+    if not requester or requester.rol != "dueño":
+        raise HTTPException(status_code=403, detail="Solo el dueño puede expulsar miembros")
+        
+    stmt_target = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == id,
+        ProyectoMiembro.usuario_id == usuario_id
+    )
+    target_member = (await db.execute(stmt_target)).scalars().first()
+    if not target_member:
+        raise HTTPException(status_code=404, detail="Miembro no encontrado en el proyecto")
+    if target_member.rol == "dueño":
+        raise HTTPException(status_code=403, detail="No puedes expulsar al dueño del proyecto")
+        
+    await db.delete(target_member)
+    await db.commit()
+    return None
 
 @router.post("/{id}/transacciones/", response_model=TransaccionGeneralResponse, status_code=status.HTTP_201_CREATED)
 async def create_transaccion(
@@ -283,9 +342,9 @@ async def get_proyecto_reporte_datos(
     gastos_data = (await db.execute(stmt_gastos)).all()
     
     for g, p_nombre in gastos_data:
+        setattr(g, 'cuenta_nombre', cuenta_nombres.get(g.cuenta_id, "Desconocida"))
+        setattr(g, 'registrado_por_nombre', p_nombre)
         g_resp = GastoReporteItem.from_orm(g)
-        g_resp.registrado_por_nombre = p_nombre
-        g_resp.cuenta_nombre = cuenta_nombres.get(g.cuenta_id, "Desconocida")
         gastos_list.append(g_resp)
         total_gastos += g.monto
         
@@ -297,12 +356,12 @@ async def get_proyecto_reporte_datos(
         stmt_a = select(func.sum(Abono.monto)).filter(Abono.venta_id == v.id)
         total_abonado_venta = (await db.execute(stmt_a)).scalar() or 0.0
         
+        setattr(v, 'cuenta_nombre', cuenta_nombres.get(v.cuenta_id, "Desconocida"))
+        setattr(v, 'registrado_por_nombre', p_nombre)
+        setattr(v, 'total_abonado', total_abonado_venta)
+        setattr(v, 'saldo_pendiente', round(max(v.total_venta - total_abonado_venta, 0), 2))
+        setattr(v, 'estado_pago', "Cancelado" if round(total_abonado_venta, 2) >= round(v.total_venta, 2) else ("Parcial" if round(total_abonado_venta, 2) > 0 else "Pendiente"))
         v_resp = VentaReporteItem.from_orm(v)
-        v_resp.registrado_por_nombre = p_nombre
-        v_resp.cuenta_nombre = cuenta_nombres.get(v.cuenta_id, "Desconocida")
-        v_resp.total_abonado = total_abonado_venta
-        v_resp.saldo_pendiente = round(max(v.total_venta - total_abonado_venta, 0), 2)
-        v_resp.estado_pago = "Cancelado" if round(total_abonado_venta, 2) >= round(v.total_venta, 2) else ("Parcial" if round(total_abonado_venta, 2) > 0 else "Pendiente")
         ventas_list.append(v_resp)
         
         kilos_vendidos += v.kilos_vendidos
@@ -313,10 +372,10 @@ async def get_proyecto_reporte_datos(
     all_abonos_data = (await db.execute(stmt_all_abonos)).all()
     
     for ab, v, p_nombre in all_abonos_data:
+        setattr(ab, 'cuenta_nombre', cuenta_nombres.get(v.cuenta_id, "Desconocida"))
+        setattr(ab, 'cliente', v.cliente)
+        setattr(ab, 'registrado_por_nombre', p_nombre)
         ab_resp = AbonoReporteItem.from_orm(ab)
-        ab_resp.registrado_por_nombre = p_nombre
-        ab_resp.cuenta_nombre = cuenta_nombres.get(v.cuenta_id, "Desconocida")
-        ab_resp.cliente = v.cliente
         abonos_list.append(ab_resp)
         total_cobrado += ab.monto
         

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/geometric_logo.dart';
 import '../providers/auth_providers.dart';
+import '../../../core/network/error_handler.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -54,17 +54,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
       }
     } catch (e) {
-      setState(() => _error = _parseError(e.toString()));
+      setState(() => _error = ErrorHandler.parse(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  String _parseError(String raw) {
-    if (raw.contains('Invalid login credentials')) return 'Correo o contraseña incorrectos.';
-    if (raw.contains('User already registered')) return 'Este correo ya está registrado.';
-    if (raw.contains('Password should be at least')) return 'La contraseña debe tener al menos 6 caracteres.';
-    return 'Ocurrió un error. Intenta de nuevo.';
   }
 
   @override
@@ -79,9 +72,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 children: [
                   const SizedBox(height: 60),
-                  const GeometricLogo(size: 48, color: AppColors.textSecondary),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset('assets/icon.png', width: 64, height: 64),
+                  ),
                   const SizedBox(height: 16),
-                  const Text('StackMovi', style: TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.5)),
+                  const Text('HyL Logistic', style: TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.5)),
                   const SizedBox(height: 4),
                   Text(
                     _isRegisterMode ? 'Crea tu cuenta' : 'Gestión de inventario y ventas',

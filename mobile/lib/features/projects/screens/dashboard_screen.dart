@@ -35,7 +35,7 @@ class DashboardScreen extends ConsumerWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('StackMovi', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 22, letterSpacing: -0.5)),
+                        const Text('HyL Logistic', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 22, letterSpacing: -0.5)),
                         const SizedBox(height: 2),
                         Text(nombre.isNotEmpty ? 'Hola, $nombre' : 'Panel de control', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                       ],

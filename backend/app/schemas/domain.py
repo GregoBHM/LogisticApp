@@ -36,6 +36,10 @@ class ProyectoCreate(BaseModel):
 class ProyectoInvite(BaseModel):
     email: EmailStr
 
+class ProyectoMiembroUpdate(BaseModel):
+    rol: str
+
+
 class ProyectoResponse(BaseModel):
     id: str
     nombre: str
@@ -224,6 +228,7 @@ class GastoReporteItem(GastoResponse):
 class AbonoReporteItem(AbonoResponse):
     cuenta_nombre: str
     cliente: Optional[str] = None
+    registrado_por_nombre: Optional[str] = None
 
 class ProyectoReporteResponse(BaseModel):
     proyecto_id: str

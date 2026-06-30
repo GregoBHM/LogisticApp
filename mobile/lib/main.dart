@@ -18,7 +18,7 @@ class StackMoviApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'StackMovi',
+      title: 'HyL Logistic',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       home: const _AuthGate(),
