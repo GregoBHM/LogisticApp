@@ -152,7 +152,11 @@ class ProyectoDetalleScreen extends ConsumerWidget {
       nombre = 'Usuario (${m['email'] ?? 'Sin correo'})';
     }
     final email = m['email'] ?? '';
-    final rol = m['rol'] ?? 'miembro';
+    final rawRol = m['rol']?.toString().toLowerCase() ?? 'miembro';
+    String displayRol = 'Equipo';
+    if (rawRol == 'dueño') displayRol = 'Dueño';
+    if (rawRol == 'admin') displayRol = 'Admin';
+    
     final usuarioId = m['id'] ?? m['usuario_id']; // Depending on what backend returns for user ID
 
     return Padding(
@@ -184,11 +188,17 @@ class ProyectoDetalleScreen extends ConsumerWidget {
             decoration: BoxDecoration(
               color: AppColors.background,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(
+                color: displayRol == 'Dueño' ? AppColors.cream.withOpacity(0.5) : AppColors.border
+              ),
             ),
-            child: Text(rol, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+            child: Text(displayRol, style: TextStyle(
+              color: displayRol == 'Dueño' ? AppColors.cream : AppColors.textSecondary, 
+              fontSize: 11,
+              fontWeight: displayRol == 'Dueño' ? FontWeight.w600 : FontWeight.normal,
+            )),
           ),
-          if (usuarioId != null)
+          if (usuarioId != null && rawRol != 'dueño')
             IconButton(
               icon: const Icon(Icons.more_vert, color: AppColors.textSecondary, size: 18),
               onPressed: () => _showOpcionesMiembroSheet(context, ref, m),
@@ -286,14 +296,15 @@ class ProyectoDetalleScreen extends ConsumerWidget {
               const SizedBox(height: 20),
               Column(
                 children: ['admin', 'miembro'].map((r) {
-                  final isSel = rolActual == r;
+                  final isSel = rolActual == r || (r == 'miembro' && rolActual == 'vendedor');
+                  final displayR = r == 'admin' ? 'Administrador' : 'Equipo';
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(
                       isSel ? Icons.radio_button_checked : Icons.radio_button_unchecked,
                       color: isSel ? AppColors.cream : AppColors.textSecondary,
                     ),
-                    title: Text(r, style: TextStyle(color: isSel ? AppColors.textPrimary : AppColors.textSecondary)),
+                    title: Text(displayR, style: TextStyle(color: isSel ? AppColors.textPrimary : AppColors.textSecondary)),
                     onTap: () => setModal(() => rolActual = r),
                   );
                 }).toList(),
