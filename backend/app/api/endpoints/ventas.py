@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+﻿from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
@@ -22,8 +22,6 @@ async def update_venta(
     if not venta:
         raise HTTPException(status_code=404, detail="Venta no encontrada")
         
-    # Verify permissions (we assume the user is member of the project)
-    # Ideally, we verify against ProyectoMiembro via Cuenta, but for simplicity we allow update
     if venta_in.cliente is not None:
         venta.cliente = venta_in.cliente
     
@@ -44,7 +42,6 @@ async def update_venta(
     await db.commit()
     await db.refresh(venta)
     
-    # We return a dummy response for mapped fields as frontend will refresh
     v_dict = venta.__dict__.copy()
     v_dict['registrado_por_nombre'] = ""
     v_dict['total_abonado'] = 0.0
@@ -121,7 +118,6 @@ async def create_venta(
     current_user: Perfil = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    # Retrieve Cuenta to check project membership
     result = await db.execute(select(Cuenta).filter(Cuenta.id == venta_in.cuenta_id))
     cuenta = result.scalars().first()
     if not cuenta:
@@ -135,15 +131,12 @@ async def create_venta(
         raise HTTPException(status_code=403, detail="No eres miembro del proyecto")
 
     if venta_in.kilos_vendidos is None and venta_in.total_venta is not None:
-        # Venta al público: Envían dinero total y precio. Calculamos los kilos.
         kilos_calculados = round(venta_in.total_venta / venta_in.precio_por_kg, 2)
         total_calculado = venta_in.total_venta
     elif venta_in.total_venta is None and venta_in.kilos_vendidos is not None:
-        # Venta tradicional: Envían kilos y precio. Calculamos el total.
         kilos_calculados = venta_in.kilos_vendidos
         total_calculado = round(venta_in.kilos_vendidos * venta_in.precio_por_kg, 2)
     else:
-        # Enviaron ambos o ninguno (fallback a lo que envíen)
         kilos_calculados = venta_in.kilos_vendidos or 0.0
         total_calculado = venta_in.total_venta or 0.0
 
@@ -159,7 +152,6 @@ async def create_venta(
     db.add(db_venta)
     await db.flush() # Get venta ID
     
-    # Process initial abono if provided
     monto_inicial = venta_in.monto_inicial_pagado or 0.0
     if monto_inicial > 0:
         abono = Abono(
@@ -174,7 +166,6 @@ async def create_venta(
     await db.commit()
     await db.refresh(db_venta)
     
-    # Return mapped data
     v_dict = db_venta.__dict__.copy()
     v_dict['registrado_por_nombre'] = current_user.nombre
     v_dict['total_abonado'] = monto_inicial
@@ -189,7 +180,6 @@ async def get_ventas(
     current_user: Perfil = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    # Verify account & permissions
     result = await db.execute(select(Cuenta).filter(Cuenta.id == cuenta_id))
     cuenta = result.scalars().first()
     if not cuenta:
@@ -202,14 +192,12 @@ async def get_ventas(
     if not (await db.execute(stmt)).scalars().first():
         raise HTTPException(status_code=403, detail="No eres miembro")
 
-    # Fetch Ventas with user names and sum of abonos
     stmt_ventas = select(Venta, Perfil.nombre).join(Perfil).filter(Venta.cuenta_id == cuenta_id).order_by(Venta.fecha_venta.desc())
     result_ventas = await db.execute(stmt_ventas)
     ventas_data = result_ventas.all()
     
     response = []
     for v, p_nombre in ventas_data:
-        # Get total abonos
         stmt_a = select(func.sum(Abono.monto)).filter(Abono.venta_id == v.id)
         res_a = await db.execute(stmt_a)
         total_abonado = res_a.scalar() or 0.0
@@ -230,7 +218,6 @@ async def create_abono(
     current_user: Perfil = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    # Verifications would go here (Check if sale exists and permissions)
     
     db_abono = Abono(
         venta_id=abono_in.venta_id,
