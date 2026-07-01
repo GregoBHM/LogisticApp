@@ -134,15 +134,26 @@ async def create_venta(
     if not (await db.execute(stmt)).scalars().first():
         raise HTTPException(status_code=403, detail="No eres miembro del proyecto")
 
-    total_venta = venta_in.total_venta if venta_in.total_venta is not None else (venta_in.kilos_vendidos * venta_in.precio_por_kg)
+    if venta_in.kilos_vendidos is None and venta_in.total_venta is not None:
+        # Venta al público: Envían dinero total y precio. Calculamos los kilos.
+        kilos_calculados = round(venta_in.total_venta / venta_in.precio_por_kg, 2)
+        total_calculado = venta_in.total_venta
+    elif venta_in.total_venta is None and venta_in.kilos_vendidos is not None:
+        # Venta tradicional: Envían kilos y precio. Calculamos el total.
+        kilos_calculados = venta_in.kilos_vendidos
+        total_calculado = round(venta_in.kilos_vendidos * venta_in.precio_por_kg, 2)
+    else:
+        # Enviaron ambos o ninguno (fallback a lo que envíen)
+        kilos_calculados = venta_in.kilos_vendidos or 0.0
+        total_calculado = venta_in.total_venta or 0.0
 
     db_venta = Venta(
         cuenta_id=venta_in.cuenta_id,
         registrado_por=current_user.id,
         cliente=venta_in.cliente,
-        kilos_vendidos=venta_in.kilos_vendidos,
+        kilos_vendidos=kilos_calculados,
         precio_por_kg=venta_in.precio_por_kg,
-        total_venta=total_venta,
+        total_venta=total_calculado,
         fecha_venta=venta_in.fecha_venta
     )
     db.add(db_venta)
@@ -167,8 +178,8 @@ async def create_venta(
     v_dict = db_venta.__dict__.copy()
     v_dict['registrado_por_nombre'] = current_user.nombre
     v_dict['total_abonado'] = monto_inicial
-    v_dict['saldo_pendiente'] = round(max(total_venta - monto_inicial, 0), 2)
-    v_dict['estado_pago'] = "Cancelado" if round(monto_inicial, 2) >= round(total_venta, 2) else ("Parcial" if round(monto_inicial, 2) > 0 else "Pendiente")
+    v_dict['saldo_pendiente'] = round(max(total_calculado - monto_inicial, 0), 2)
+    v_dict['estado_pago'] = "Cancelado" if round(monto_inicial, 2) >= round(total_calculado, 2) else ("Parcial" if round(monto_inicial, 2) > 0 else "Pendiente")
     
     return v_dict
 

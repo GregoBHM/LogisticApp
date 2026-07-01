@@ -97,9 +97,9 @@ class CuentaResponse(BaseModel):
 class VentaCreate(BaseModel):
     cuenta_id: str
     cliente: str
-    kilos_vendidos: float
     precio_por_kg: float
     fecha_venta: date
+    kilos_vendidos: Optional[float] = None
     monto_inicial_pagado: Optional[float] = None
     total_venta: Optional[float] = None
 
