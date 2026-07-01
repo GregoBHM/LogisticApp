@@ -9,6 +9,8 @@ services:
       POSTGRES_USER: stackmovi
       POSTGRES_PASSWORD: stackmovi_password
       POSTGRES_DB: stackmovi_db
+    ports:
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
