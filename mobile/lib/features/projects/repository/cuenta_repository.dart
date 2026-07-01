@@ -96,7 +96,7 @@ class VentaRepository {
     required String cuentaId,
     required String registradoPor,
     required String cliente,
-    required double kilosVendidos,
+    double? kilosVendidos,
     required double precioPorKg,
     required double totalVenta,
     required DateTime fechaVenta,
@@ -105,7 +105,8 @@ class VentaRepository {
     await _api.client.post('/ventas/', data: {
       'cuenta_id': cuentaId,
       'cliente': cliente.trim(),
-      'kilos_vendidos': kilosVendidos,
+      // Si kilosVendidos es null, el backend calcula los kilos a partir del total y el precio
+      if (kilosVendidos != null) 'kilos_vendidos': kilosVendidos,
       'precio_por_kg': precioPorKg,
       'total_venta': totalVenta,
       'fecha_venta': fechaVenta.toIso8601String().substring(0, 10),
