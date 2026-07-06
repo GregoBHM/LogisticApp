@@ -35,7 +35,7 @@ class DashboardScreen extends ConsumerWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('HyL Logistic', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 22, letterSpacing: -0.5)),
+                        const Text('GyL Logistic', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 22, letterSpacing: -0.5)),
                         const SizedBox(height: 2),
                         Text(nombre.isNotEmpty ? 'Hola, $nombre' : 'Panel de control', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                       ],
@@ -61,8 +61,8 @@ class DashboardScreen extends ConsumerWidget {
                     _quickStat('${proyectos.length}', 'Proyectos'),
                     const SizedBox(width: 8),
                     _quickStat(
-                      proyectos.length.toString(),
-                      'Total',
+                      '${proyectos.fold<int>(0, (s, p) => s + (ref.watch(cuentasProvider(p.id)).value?.where((c) => c.estaAbierta).length ?? 0))}',
+                      'Cuentas activas',
                     ),
                   ],
                 ),

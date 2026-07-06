@@ -21,10 +21,11 @@ class CuentaRepository {
     required String nombre,
     required String producto,
     required String tipoUnidad,
+    required String unidadMedida,
     required double cantidadUnidades,
-    required double kgPorUnidad,
+    required double cantidadPorUnidad,
     required double inversionTotal,
-    required double precioVentaKg,
+    required double precioUnitario,
     required String creadoPor,
     required DateTime fechaApertura,
   }) async {
@@ -33,10 +34,11 @@ class CuentaRepository {
       'nombre': nombre.trim(),
       'producto': producto.trim(),
       'tipo_unidad': tipoUnidad.trim(),
+      'unidad_medida': unidadMedida,
       'cantidad_unidades': cantidadUnidades,
-      'kg_por_unidad': kgPorUnidad,
+      'cantidad_por_unidad': cantidadPorUnidad,
       'inversion_total': inversionTotal,
-      'precio_venta_kg': precioVentaKg,
+      'precio_unitario': precioUnitario,
       'fecha_apertura': fechaApertura.toIso8601String().substring(0, 10),
     });
     return CuentaModel.fromJson(res.data);
@@ -44,6 +46,10 @@ class CuentaRepository {
 
   Future<void> cerrarCuenta(String cuentaId, String cerradoPor) async {
     await _api.client.put('/cuentas/$cuentaId/cerrar');
+  }
+
+  Future<void> reabrirCuenta(String cuentaId) async {
+    await _api.client.put('/cuentas/$cuentaId/reabrir');
   }
 
   Future<List<AbonoDetalleModel>> getAbonosCuenta(String cuentaId) async {
@@ -56,23 +62,24 @@ class CuentaRepository {
     String? nombre,
     String? producto,
     String? tipoUnidad,
+    String? unidadMedida,
     double? cantidadUnidades,
-    double? kgPorUnidad,
+    double? cantidadPorUnidad,
     double? inversionTotal,
-    double? precioVentaKg,
+    double? precioUnitario,
     DateTime? fechaApertura,
   }) async {
     final updates = <String, dynamic>{};
     if (nombre != null) updates['nombre'] = nombre.trim();
     if (producto != null) updates['producto'] = producto.trim();
     if (tipoUnidad != null) updates['tipo_unidad'] = tipoUnidad.trim();
+    if (unidadMedida != null) updates['unidad_medida'] = unidadMedida;
     if (cantidadUnidades != null) updates['cantidad_unidades'] = cantidadUnidades;
-    if (kgPorUnidad != null) updates['kg_por_unidad'] = kgPorUnidad;
+    if (cantidadPorUnidad != null) updates['cantidad_por_unidad'] = cantidadPorUnidad;
     if (inversionTotal != null) updates['inversion_total'] = inversionTotal;
-    if (precioVentaKg != null) updates['precio_venta_kg'] = precioVentaKg;
+    if (precioUnitario != null) updates['precio_unitario'] = precioUnitario;
     if (fechaApertura != null) updates['fecha_apertura'] = fechaApertura.toIso8601String().substring(0, 10);
     if (updates.isEmpty) return;
-
     await _api.client.put('/cuentas/$id', data: updates);
   }
 }
@@ -96,8 +103,8 @@ class VentaRepository {
     required String cuentaId,
     required String registradoPor,
     required String cliente,
-    double? kilosVendidos,
-    required double precioPorKg,
+    double? cantidadVendida,
+    required double precioUnitario,
     required double totalVenta,
     required DateTime fechaVenta,
     double? montoInicialPagado,
@@ -105,8 +112,8 @@ class VentaRepository {
     await _api.client.post('/ventas/', data: {
       'cuenta_id': cuentaId,
       'cliente': cliente.trim(),
-      if (kilosVendidos != null) 'kilos_vendidos': kilosVendidos,
-      'precio_por_kg': precioPorKg,
+      if (cantidadVendida != null) 'cantidad_vendida': cantidadVendida,
+      'precio_unitario': precioUnitario,
       'total_venta': totalVenta,
       'fecha_venta': fechaVenta.toIso8601String().substring(0, 10),
       if (montoInicialPagado != null) 'monto_inicial_pagado': montoInicialPagado,
@@ -116,17 +123,18 @@ class VentaRepository {
   Future<void> actualizarVenta(
     String id, {
     String? cliente,
-    double? kilosVendidos,
-    double? precioPorKg,
+    double? cantidadVendida,
+    double? precioUnitario,
+    double? totalVenta,
     DateTime? fechaVenta,
   }) async {
     final updates = <String, dynamic>{};
     if (cliente != null) updates['cliente'] = cliente.trim();
-    if (kilosVendidos != null) updates['kilos_vendidos'] = kilosVendidos;
-    if (precioPorKg != null) updates['precio_por_kg'] = precioPorKg;
+    if (cantidadVendida != null) updates['cantidad_vendida'] = cantidadVendida;
+    if (precioUnitario != null) updates['precio_unitario'] = precioUnitario;
+    if (totalVenta != null) updates['total_venta'] = totalVenta;
     if (fechaVenta != null) updates['fecha_venta'] = fechaVenta.toIso8601String().substring(0, 10);
     if (updates.isEmpty) return;
-
     await _api.client.put('/ventas/$id', data: updates);
   }
 
@@ -160,7 +168,6 @@ class VentaRepository {
     if (nota != null) updates['nota'] = nota.trim();
     if (fechaAbono != null) updates['fecha_abono'] = fechaAbono.toIso8601String().substring(0, 10);
     if (updates.isEmpty) return;
-
     await _api.client.put('/ventas/abonos/$id', data: updates);
   }
 
@@ -183,12 +190,14 @@ class GastoRepository {
     required String cuentaId,
     required String registradoPor,
     required String descripcion,
+    String? categoria,
     required double monto,
     required DateTime fechaGasto,
   }) async {
     await _api.client.post('/gastos/', data: {
       'cuenta_id': cuentaId,
       'descripcion': descripcion.trim(),
+      if (categoria != null) 'categoria': categoria,
       'monto': monto,
       'fecha_gasto': fechaGasto.toIso8601String().substring(0, 10),
     });
@@ -197,15 +206,16 @@ class GastoRepository {
   Future<void> actualizarGasto(
     String id, {
     String? descripcion,
+    String? categoria,
     double? monto,
     DateTime? fechaGasto,
   }) async {
     final updates = <String, dynamic>{};
     if (descripcion != null) updates['descripcion'] = descripcion.trim();
+    if (categoria != null) updates['categoria'] = categoria;
     if (monto != null) updates['monto'] = monto;
     if (fechaGasto != null) updates['fecha_gasto'] = fechaGasto.toIso8601String().substring(0, 10);
     if (updates.isEmpty) return;
-
     await _api.client.put('/gastos/$id', data: updates);
   }
 

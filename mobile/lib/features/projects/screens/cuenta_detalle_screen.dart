@@ -247,7 +247,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
               ),
               _resumenStat(
                 'Stock',
-                '${liveCuenta.kilosRestantes.toStringAsFixed(0)} kg',
+                '${liveCuenta.stockRestante.toStringAsFixed(0)} ${liveCuenta.unidadMedida}',
                 Icons.inventory_2_outlined,
                 AppColors.cream,
               ),
@@ -339,7 +339,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${DateFormat('dd MMM yyyy', 'es').format(v.fechaVenta)} • ${v.kilosVendidos.toStringAsFixed(1)} kg a ${v.precioPorKg.toStringAsFixed(2)}',
+                    '${DateFormat('dd MMM yyyy', 'es').format(v.fechaVenta)} • ${v.cantidadVendida.toStringAsFixed(1)} ${liveCuenta.unidadMedida} a ${v.precioUnitario.toStringAsFixed(2)}',
                     style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 12,
@@ -560,7 +560,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         style: TextStyle(color: AppColors.textPrimary),
                       ),
                       content: const Text(
-                        'Se restaurarán los kilos a la cuenta.',
+                        'El stock se restaurará a la cuenta.',
                         style: TextStyle(color: AppColors.textSecondary),
                       ),
                       actions: [
@@ -733,14 +733,14 @@ class CuentaDetalleScreen extends ConsumerWidget {
     CuentaResumenModel liveCuenta,
   ) {
     final clienteCtrl = TextEditingController(text: v.cliente);
-    final kilosCtrl = TextEditingController(text: v.kilosVendidos.toString());
-    final precioCtrl = TextEditingController(text: v.precioPorKg.toString());
+    final cantidadCtrl = TextEditingController(text: v.cantidadVendida.toString());
+    final precioCtrl = TextEditingController(text: v.precioUnitario.toString());
     final totalCtrl = TextEditingController(text: v.totalVenta.toString());
     bool loading = false;
 
     void recalcTotal(void Function(void Function()) setModal) {
       setModal(() {
-        final k = double.tryParse(kilosCtrl.text) ?? 0;
+        final k = double.tryParse(cantidadCtrl.text) ?? 0;
         final p = double.tryParse(precioCtrl.text) ?? 0;
         if (k > 0 && p > 0) totalCtrl.text = (k * p).toStringAsFixed(2);
       });
@@ -748,7 +748,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
 
     void recalcPrecio(void Function(void Function()) setModal) {
       setModal(() {
-        final k = double.tryParse(kilosCtrl.text) ?? 0;
+        final k = double.tryParse(cantidadCtrl.text) ?? 0;
         final t = double.tryParse(totalCtrl.text) ?? 0;
         if (k > 0 && t > 0) precioCtrl.text = (t / k).toStringAsFixed(2);
       });
@@ -800,8 +800,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: _sheetField(
-                        kilosCtrl,
-                        'Kilos',
+                        cantidadCtrl,
+                        'Cantidad',
                         'Ej: 29.8',
                         keyboardType: TextInputType.number,
                         onChanged: (_) {
@@ -814,7 +814,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                     Expanded(
                       child: _sheetField(
                         precioCtrl,
-                        'Precio /Kg',
+                        'Precio unitario',
                         'Ej: 3.50',
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
@@ -842,7 +842,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         ? null
                         : () async {
                             if (clienteCtrl.text.isEmpty ||
-                                kilosCtrl.text.isEmpty ||
+                                cantidadCtrl.text.isEmpty ||
                                 precioCtrl.text.isEmpty)
                               return;
                             setModal(() => loading = true);
@@ -852,8 +852,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                   .actualizarVenta(
                                     v.id,
                                     cliente: clienteCtrl.text,
-                                    kilosVendidos: double.parse(kilosCtrl.text),
-                                    precioPorKg: double.parse(precioCtrl.text),
+                                    cantidadVendida: double.parse(cantidadCtrl.text),
+                                    precioUnitario: double.parse(precioCtrl.text),
+                                    totalVenta: double.tryParse(totalCtrl.text),
                                   );
                               if (context.mounted) {
                                 Navigator.pop(context);
@@ -1392,7 +1393,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
     final clienteCtrl = TextEditingController();
     final kilosCtrl = TextEditingController();
     final precioCtrl = TextEditingController(
-      text: liveCuenta.precioVentaKg.toStringAsFixed(2),
+      text: liveCuenta.precioUnitario.toStringAsFixed(2),
     );
     final totalCtrl = TextEditingController();
     final abonoCtrl = TextEditingController();
@@ -1480,7 +1481,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Stock disponible: ${liveCuenta.kilosRestantes.toStringAsFixed(0)} kg',
+                    'Stock disponible: ${liveCuenta.stockRestante.toStringAsFixed(0)} ${liveCuenta.unidadMedida}',
                     style: const TextStyle(
                       color: AppColors.textMuted,
                       fontSize: 13,
@@ -1641,7 +1642,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         Expanded(
                           child: _sheetField(
                             kilosCtrl,
-                            'Kilos',
+                            'Cantidad (${liveCuenta.unidadMedida})',
                             'Ej: 29.8',
                             keyboardType: TextInputType.number,
                             onChanged: (_) {
@@ -1654,7 +1655,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         Expanded(
                           child: _sheetField(
                             precioCtrl,
-                            'Precio /Kg',
+                            'Precio /${liveCuenta.unidadMedida}',
                             'Ej: 4.00',
                             keyboardType: TextInputType.number,
                             onChanged: (_) => recalcTotal(setModal),
@@ -1665,7 +1666,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   else
                     _sheetField(
                       precioCtrl,
-                      'Precio por Kg (S/)',
+                      'Precio /${liveCuenta.unidadMedida}',
                       'Ej: 4.00',
                       keyboardType: TextInputType.number,
                       onChanged: (_) => setModal(() {}),
@@ -1990,11 +1991,11 @@ class CuentaDetalleScreen extends ConsumerWidget {
                               // Solo validar stock en modo tradicional (en modo público el servidor valida)
                               if (!ventaPorMonto &&
                                   kilos != null &&
-                                  kilos > liveCuenta.kilosRestantes) {
+                                  kilos > liveCuenta.stockRestante) {
                                 ScaffoldMessenger.of(ctx2).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      'No tienes suficiente stock. Disponible: ${liveCuenta.kilosRestantes.toStringAsFixed(0)} kg',
+                                      'No tienes suficiente stock. Disponible: ${liveCuenta.stockRestante.toStringAsFixed(0)} ${liveCuenta.unidadMedida}',
                                     ),
                                   ),
                                 );
@@ -2009,9 +2010,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                       cuentaId: liveCuenta.id,
                                       registradoPor: '',
                                       cliente: cliente,
-                                      // En modo Público: kilosVendidos = null, el servidor calcula T/P
-                                      kilosVendidos: kilos,
-                                      precioPorKg: precio,
+                                      cantidadVendida: kilos,
+                                      precioUnitario: precio,
                                       totalVenta: total,
                                       fechaVenta: fechaVenta,
                                       montoInicialPagado: abono,

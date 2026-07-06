@@ -179,8 +179,8 @@ class CajaGeneralScreen extends ConsumerWidget {
   Widget _buildTransaccionRow(BuildContext context, WidgetRef ref, TransaccionGeneralModel t) {
     final esIngreso = t.tipo == 'ingreso';
     return GestureDetector(
-      onLongPress: () {
-        _confirmDeleteTransaccion(context, ref, t);
+      onTap: () {
+        _showOpcionesTransaccionSheet(context, ref, t);
       },
       child: Padding(
         padding: const EdgeInsets.only(bottom: 16),
@@ -236,6 +236,61 @@ class CajaGeneralScreen extends ConsumerWidget {
     );
   }
 
+  void _showOpcionesTransaccionSheet(BuildContext context, WidgetRef ref, TransaccionGeneralModel t) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.edit_outlined, color: AppColors.cream),
+                title: const Text('Editar', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => _NuevaTransaccionForm(
+                      proyectoId: proyecto.id,
+                      editando: t,
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: AppColors.negative),
+                title: const Text('Eliminar', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  _confirmDeleteTransaccion(context, ref, t);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _confirmDeleteTransaccion(BuildContext context, WidgetRef ref, TransaccionGeneralModel t) {
     showDialog(
       context: context,
@@ -284,7 +339,8 @@ class CajaGeneralScreen extends ConsumerWidget {
 
 class _NuevaTransaccionForm extends ConsumerStatefulWidget {
   final String proyectoId;
-  const _NuevaTransaccionForm({required this.proyectoId});
+  final TransaccionGeneralModel? editando;
+  const _NuevaTransaccionForm({required this.proyectoId, this.editando});
 
   @override
   ConsumerState<_NuevaTransaccionForm> createState() => _NuevaTransaccionFormState();
@@ -295,7 +351,19 @@ class _NuevaTransaccionFormState extends ConsumerState<_NuevaTransaccionForm> {
   final _descController = TextEditingController();
   final _montoController = TextEditingController();
   String _tipo = 'ingreso';
+  DateTime _fecha = DateTime.now();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.editando != null) {
+      _descController.text = widget.editando!.descripcion;
+      _montoController.text = widget.editando!.monto.toString();
+      _tipo = widget.editando!.tipo;
+      _fecha = widget.editando!.fechaTransaccion;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -396,6 +464,43 @@ class _NuevaTransaccionFormState extends ConsumerState<_NuevaTransaccionForm> {
                 return null;
               },
             ),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _fecha,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                  builder: (c, child) => Theme(data: ThemeData.dark(), child: child!),
+                );
+                if (picked != null) setState(() => _fecha = picked);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Fecha', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                    Row(
+                      children: [
+                        Text(
+                          DateFormat('dd MMM yyyy', 'es').format(_fecha),
+                          style: const TextStyle(color: AppColors.cream, fontWeight: FontWeight.w500, fontSize: 14),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.cream),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _isLoading ? null : _submit,
@@ -441,13 +546,23 @@ class _NuevaTransaccionFormState extends ConsumerState<_NuevaTransaccionForm> {
     setState(() => _isLoading = true);
 
     try {
-      await ref.read(proyectoRepositoryProvider).addTransaccion(
-            widget.proyectoId,
-            _tipo,
-            _descController.text.trim(),
-            double.parse(_montoController.text.trim()),
-            DateTime.now(),
-          );
+      if (widget.editando != null) {
+        await ref.read(proyectoRepositoryProvider).updateTransaccion(
+              widget.editando!.id,
+              _tipo,
+              _descController.text.trim(),
+              double.parse(_montoController.text.trim()),
+              _fecha,
+            );
+      } else {
+        await ref.read(proyectoRepositoryProvider).addTransaccion(
+              widget.proyectoId,
+              _tipo,
+              _descController.text.trim(),
+              double.parse(_montoController.text.trim()),
+              _fecha,
+            );
+      }
       ref.invalidate(transaccionesProyectoProvider(widget.proyectoId));
       if (mounted) Navigator.pop(context);
     } catch (e) {

@@ -706,7 +706,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
               Row(
                 children: [
                   Text(
-                    '${cuenta.cantidadUnidades.toStringAsFixed(0)} ${cuenta.tipoUnidad}s · ${cuenta.kilosTotales.toStringAsFixed(0)} kg',
+                    '${cuenta.cantidadUnidades.toStringAsFixed(0)} ${cuenta.tipoUnidad} · ${cuenta.stockTotal.toStringAsFixed(0)} ${cuenta.unidadMedida}',
                     style: const TextStyle(
                       color: AppColors.textMuted,
                       fontSize: 12,
@@ -731,11 +731,11 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   ),
                   _statCol(
                     'Vendido',
-                    '${cuenta.kilosVendidos.toStringAsFixed(0)} kg',
+                    '${cuenta.cantidadVendida.toStringAsFixed(0)} ${cuenta.unidadMedida}',
                   ),
                   _statCol(
                     'Restante',
-                    '${cuenta.kilosRestantes.toStringAsFixed(0)} kg',
+                    '${cuenta.stockRestante.toStringAsFixed(0)} ${cuenta.unidadMedida}',
                     align: CrossAxisAlignment.end,
                   ),
                 ],
@@ -1011,17 +1011,18 @@ class ProyectoDetalleScreen extends ConsumerWidget {
   ) {
     final nombreCtrl = TextEditingController(text: cuenta.nombre);
     final productoCtrl = TextEditingController(text: cuenta.producto);
+    final tipoUnidadCtrl = TextEditingController(text: cuenta.tipoUnidad);
     final cantidadCtrl = TextEditingController(
       text: cuenta.cantidadUnidades.toString(),
     );
-    final kgCtrl = TextEditingController(text: cuenta.kgPorUnidad.toString());
+    final cantPorUnidadCtrl = TextEditingController(text: cuenta.cantidadPorUnidad.toString());
     final inversionCtrl = TextEditingController(
       text: cuenta.inversionTotal.toString(),
     );
     final precioCtrl = TextEditingController(
-      text: cuenta.precioVentaKg.toString(),
+      text: cuenta.precioUnitario.toString(),
     );
-    String tipoUnidad = cuenta.tipoUnidad;
+    String unidadMedida = cuenta.unidadMedida;
     DateTime fechaApertura = cuenta.fechaApertura;
     bool loading = false;
 
@@ -1068,56 +1069,71 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                 _sheetField(
                   nombreCtrl,
                   'Nombre de la cuenta',
-                  'Ej: Lote Papa Junio',
+                  'Ej: Caja Frutas Junio',
                 ),
                 const SizedBox(height: 12),
                 _sheetField(
                   productoCtrl,
-                  'Producto',
-                  'Ej: Papa, Cebolla, Maíz',
+                  'Producto o Servicio',
+                  'Ej: Mango, Ropa, Servicio',
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Tipo de Unidad',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 6),
                 Row(
-                  children: ['Saco', 'Caja', 'Jaba', 'Costal'].map((t) {
-                    final sel = tipoUnidad == t;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
-                        onTap: () => setModal(() => tipoUnidad = t),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: sel ? AppColors.cream : AppColors.background,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: sel ? AppColors.cream : AppColors.border,
-                            ),
-                          ),
-                          child: Text(
-                            t,
-                            style: TextStyle(
-                              color: sel
-                                  ? AppColors.background
-                                  : AppColors.textSecondary,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
+                  children: [
+                    Expanded(
+                      child: _sheetField(
+                        tipoUnidadCtrl,
+                        'Tipo de empaque/lote',
+                        'Ej: Caja, Paquete, Lote',
                       ),
-                    );
-                  }).toList(),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Unidad de medida',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            children: ['und', 'kg', 'lt', 'pz', 'm'].map((u) {
+                              final sel = unidadMedida == u;
+                              return GestureDetector(
+                                onTap: () => setModal(() => unidadMedida = u),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: sel ? AppColors.cream : AppColors.background,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: sel ? AppColors.cream : AppColors.border,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    u,
+                                    style: TextStyle(
+                                      color: sel ? AppColors.background : AppColors.textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -1130,16 +1146,12 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                         keyboardType: TextInputType.number,
                         onChanged: (_) {
                           setModal(() {
-                            final cant =
-                                double.tryParse(cantidadCtrl.text) ?? 0;
-                            final kgU = double.tryParse(kgCtrl.text) ?? 0;
-                            final inv =
-                                double.tryParse(inversionCtrl.text) ?? 0;
-                            final total = cant * kgU;
+                            final cant = double.tryParse(cantidadCtrl.text) ?? 0;
+                            final cpu = double.tryParse(cantPorUnidadCtrl.text) ?? 0;
+                            final inv = double.tryParse(inversionCtrl.text) ?? 0;
+                            final total = cant * cpu;
                             if (total > 0 && inv > 0)
-                              precioCtrl.text = (inv / total).toStringAsFixed(
-                                2,
-                              );
+                              precioCtrl.text = (inv / total).toStringAsFixed(2);
                           });
                         },
                       ),
@@ -1147,32 +1159,28 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _sheetField(
-                        kgCtrl,
-                        'Kg por unidad',
+                        cantPorUnidadCtrl,
+                        'Cant. por empaque ($unidadMedida)',
                         'Ej: 50',
                         keyboardType: TextInputType.number,
                         onChanged: (_) {
                           setModal(() {
-                            final cant =
-                                double.tryParse(cantidadCtrl.text) ?? 0;
-                            final kgU = double.tryParse(kgCtrl.text) ?? 0;
-                            final inv =
-                                double.tryParse(inversionCtrl.text) ?? 0;
-                            final total = cant * kgU;
+                            final cant = double.tryParse(cantidadCtrl.text) ?? 0;
+                            final cpu = double.tryParse(cantPorUnidadCtrl.text) ?? 0;
+                            final inv = double.tryParse(inversionCtrl.text) ?? 0;
+                            final total = cant * cpu;
                             if (total > 0 && inv > 0)
-                              precioCtrl.text = (inv / total).toStringAsFixed(
-                                2,
-                              );
+                              precioCtrl.text = (inv / total).toStringAsFixed(2);
                           });
                         },
                       ),
                     ),
                   ],
                 ),
-                if (cantidadCtrl.text.isNotEmpty && kgCtrl.text.isNotEmpty) ...[
+                if (cantidadCtrl.text.isNotEmpty && cantPorUnidadCtrl.text.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(
-                    'Total: ${((double.tryParse(cantidadCtrl.text) ?? 0) * (double.tryParse(kgCtrl.text) ?? 0)).toStringAsFixed(0)} kg',
+                    'Stock: ${((double.tryParse(cantidadCtrl.text) ?? 0) * (double.tryParse(cantPorUnidadCtrl.text) ?? 0)).toStringAsFixed(0)} $unidadMedida',
                     style: const TextStyle(
                       color: AppColors.cream,
                       fontSize: 13,
@@ -1189,9 +1197,9 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   onChanged: (_) {
                     setModal(() {
                       final cant = double.tryParse(cantidadCtrl.text) ?? 0;
-                      final kgU = double.tryParse(kgCtrl.text) ?? 0;
+                      final cpu = double.tryParse(cantPorUnidadCtrl.text) ?? 0;
                       final inv = double.tryParse(inversionCtrl.text) ?? 0;
-                      final total = cant * kgU;
+                      final total = cant * cpu;
                       if (total > 0 && inv > 0)
                         precioCtrl.text = (inv / total).toStringAsFixed(2);
                     });
@@ -1202,7 +1210,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Precio de Venta /Kg',
+                      'Precio de Venta',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,
@@ -1253,7 +1261,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                             if (nombreCtrl.text.isEmpty ||
                                 productoCtrl.text.isEmpty ||
                                 cantidadCtrl.text.isEmpty ||
-                                kgCtrl.text.isEmpty ||
+                                cantPorUnidadCtrl.text.isEmpty ||
                                 inversionCtrl.text.isEmpty ||
                                 precioCtrl.text.isEmpty) {
                               return;
@@ -1265,15 +1273,12 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                                 cuenta.id,
                                 nombre: nombreCtrl.text,
                                 producto: productoCtrl.text,
-                                tipoUnidad: tipoUnidad,
-                                cantidadUnidades: double.parse(
-                                  cantidadCtrl.text,
-                                ),
-                                kgPorUnidad: double.parse(kgCtrl.text),
-                                inversionTotal: double.parse(
-                                  inversionCtrl.text,
-                                ),
-                                precioVentaKg: double.parse(precioCtrl.text),
+                                tipoUnidad: tipoUnidadCtrl.text.isEmpty ? 'Unidad' : tipoUnidadCtrl.text,
+                                unidadMedida: unidadMedida,
+                                cantidadUnidades: double.parse(cantidadCtrl.text),
+                                cantidadPorUnidad: double.parse(cantPorUnidadCtrl.text),
+                                inversionTotal: double.parse(inversionCtrl.text),
+                                precioUnitario: double.parse(precioCtrl.text),
                                 fechaApertura: fechaApertura,
                               );
                               if (context.mounted) {
@@ -1321,11 +1326,12 @@ class ProyectoDetalleScreen extends ConsumerWidget {
   void _showNuevaCuentaSheet(BuildContext context, WidgetRef ref) {
     final nombreCtrl = TextEditingController();
     final productoCtrl = TextEditingController();
+    final tipoUnidadCtrl = TextEditingController();
     final cantidadCtrl = TextEditingController();
-    final kgCtrl = TextEditingController();
+    final cantPorUnidadCtrl = TextEditingController();
     final inversionCtrl = TextEditingController();
     final precioCtrl = TextEditingController();
-    String tipoUnidad = 'Saco';
+    String unidadMedida = 'und';
     DateTime fechaApertura = DateTime.now();
     bool loading = false;
 
@@ -1372,56 +1378,71 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                 _sheetField(
                   nombreCtrl,
                   'Nombre de la cuenta',
-                  'Ej: Lote Papa Junio',
+                  'Ej: Caja Frutas Junio',
                 ),
                 const SizedBox(height: 12),
                 _sheetField(
                   productoCtrl,
-                  'Producto',
-                  'Ej: Papa, Cebolla, Maíz',
+                  'Producto o Servicio',
+                  'Ej: Mango, Ropa, Servicio',
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Tipo de Unidad',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 6),
                 Row(
-                  children: ['Saco', 'Caja', 'Jaba', 'Costal'].map((t) {
-                    final sel = tipoUnidad == t;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
-                        onTap: () => setModal(() => tipoUnidad = t),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: sel ? AppColors.cream : AppColors.background,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: sel ? AppColors.cream : AppColors.border,
-                            ),
-                          ),
-                          child: Text(
-                            t,
-                            style: TextStyle(
-                              color: sel
-                                  ? AppColors.background
-                                  : AppColors.textSecondary,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
+                  children: [
+                    Expanded(
+                      child: _sheetField(
+                        tipoUnidadCtrl,
+                        'Tipo de empaque/lote',
+                        'Ej: Caja, Paquete, Lote',
                       ),
-                    );
-                  }).toList(),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Unidad de medida',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            children: ['und', 'kg', 'lt', 'pz', 'm'].map((u) {
+                              final sel = unidadMedida == u;
+                              return GestureDetector(
+                                onTap: () => setModal(() => unidadMedida = u),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: sel ? AppColors.cream : AppColors.background,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: sel ? AppColors.cream : AppColors.border,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    u,
+                                    style: TextStyle(
+                                      color: sel ? AppColors.background : AppColors.textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -1434,16 +1455,12 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                         keyboardType: TextInputType.number,
                         onChanged: (_) {
                           setModal(() {
-                            final cant =
-                                double.tryParse(cantidadCtrl.text) ?? 0;
-                            final kgU = double.tryParse(kgCtrl.text) ?? 0;
-                            final inv =
-                                double.tryParse(inversionCtrl.text) ?? 0;
-                            final total = cant * kgU;
+                            final cant = double.tryParse(cantidadCtrl.text) ?? 0;
+                            final cpu = double.tryParse(cantPorUnidadCtrl.text) ?? 0;
+                            final inv = double.tryParse(inversionCtrl.text) ?? 0;
+                            final total = cant * cpu;
                             if (total > 0 && inv > 0)
-                              precioCtrl.text = (inv / total).toStringAsFixed(
-                                2,
-                              );
+                              precioCtrl.text = (inv / total).toStringAsFixed(2);
                           });
                         },
                       ),
@@ -1451,32 +1468,28 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _sheetField(
-                        kgCtrl,
-                        'Kg por unidad',
+                        cantPorUnidadCtrl,
+                        'Cant. por empaque ($unidadMedida)',
                         'Ej: 50',
                         keyboardType: TextInputType.number,
                         onChanged: (_) {
                           setModal(() {
-                            final cant =
-                                double.tryParse(cantidadCtrl.text) ?? 0;
-                            final kgU = double.tryParse(kgCtrl.text) ?? 0;
-                            final inv =
-                                double.tryParse(inversionCtrl.text) ?? 0;
-                            final total = cant * kgU;
+                            final cant = double.tryParse(cantidadCtrl.text) ?? 0;
+                            final cpu = double.tryParse(cantPorUnidadCtrl.text) ?? 0;
+                            final inv = double.tryParse(inversionCtrl.text) ?? 0;
+                            final total = cant * cpu;
                             if (total > 0 && inv > 0)
-                              precioCtrl.text = (inv / total).toStringAsFixed(
-                                2,
-                              );
+                              precioCtrl.text = (inv / total).toStringAsFixed(2);
                           });
                         },
                       ),
                     ),
                   ],
                 ),
-                if (cantidadCtrl.text.isNotEmpty && kgCtrl.text.isNotEmpty) ...[
+                if (cantidadCtrl.text.isNotEmpty && cantPorUnidadCtrl.text.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(
-                    'Total: ${((double.tryParse(cantidadCtrl.text) ?? 0) * (double.tryParse(kgCtrl.text) ?? 0)).toStringAsFixed(0)} kg',
+                    'Stock: ${((double.tryParse(cantidadCtrl.text) ?? 0) * (double.tryParse(cantPorUnidadCtrl.text) ?? 0)).toStringAsFixed(0)} $unidadMedida',
                     style: const TextStyle(
                       color: AppColors.cream,
                       fontSize: 13,
@@ -1493,9 +1506,9 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   onChanged: (_) {
                     setModal(() {
                       final cant = double.tryParse(cantidadCtrl.text) ?? 0;
-                      final kgU = double.tryParse(kgCtrl.text) ?? 0;
+                      final cpu = double.tryParse(cantPorUnidadCtrl.text) ?? 0;
                       final inv = double.tryParse(inversionCtrl.text) ?? 0;
-                      final total = cant * kgU;
+                      final total = cant * cpu;
                       if (total > 0 && inv > 0)
                         precioCtrl.text = (inv / total).toStringAsFixed(2);
                     });
@@ -1507,9 +1520,9 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        const Text(
-                          'Precio de Venta /Kg',
-                          style: TextStyle(
+                        Text(
+                          'Precio de Venta /$unidadMedida',
+                          style: const TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 12,
                           ),
@@ -1572,9 +1585,9 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     ),
                     if (precioCtrl.text.isNotEmpty) ...[
                       const SizedBox(height: 6),
-                      Text(
-                        'A este precio recuperas exactamente tu inversión. Sube el precio para obtener ganancia.',
-                        style: const TextStyle(
+                      const Text(
+                        'A este precio recuperas exactamente tu inversión.',
+                        style: TextStyle(
                           color: AppColors.textMuted,
                           fontSize: 11,
                         ),
@@ -1650,16 +1663,14 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                             final nombre = nombreCtrl.text.trim();
                             final producto = productoCtrl.text.trim();
                             final cantidad = double.tryParse(cantidadCtrl.text);
-                            final kg = double.tryParse(kgCtrl.text);
-                            final inversion = double.tryParse(
-                              inversionCtrl.text,
-                            );
+                            final cpu = double.tryParse(cantPorUnidadCtrl.text);
+                            final inversion = double.tryParse(inversionCtrl.text);
                             final precio = double.tryParse(precioCtrl.text);
 
                             if (nombre.isEmpty ||
                                 producto.isEmpty ||
                                 cantidad == null ||
-                                kg == null ||
+                                cpu == null ||
                                 inversion == null ||
                                 precio == null) {
                               ScaffoldMessenger.of(ctx2).showSnackBar(
@@ -1688,11 +1699,12 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                                     proyectoId: proyecto.id,
                                     nombre: nombre,
                                     producto: producto,
-                                    tipoUnidad: tipoUnidad,
+                                    tipoUnidad: tipoUnidadCtrl.text.isEmpty ? 'Unidad' : tipoUnidadCtrl.text,
+                                    unidadMedida: unidadMedida,
                                     cantidadUnidades: cantidad,
-                                    kgPorUnidad: kg,
+                                    cantidadPorUnidad: cpu,
                                     inversionTotal: inversion,
-                                    precioVentaKg: precio,
+                                    precioUnitario: precio,
                                     creadoPor: '',
                                     fechaApertura: fechaApertura,
                                   );

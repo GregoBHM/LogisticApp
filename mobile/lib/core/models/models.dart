@@ -69,11 +69,12 @@ class CuentaModel {
   final String nombre;
   final String producto;
   final String tipoUnidad;
+  final String unidadMedida;
   final double cantidadUnidades;
-  final double kgPorUnidad;
-  final double kilosTotales;
+  final double cantidadPorUnidad;
+  final double stockTotal;
   final double inversionTotal;
-  final double precioVentaKg;
+  final double precioUnitario;
   final String estado;
   final String creadoPor;
   final String? cerradoPor;
@@ -87,11 +88,12 @@ class CuentaModel {
     required this.nombre,
     required this.producto,
     required this.tipoUnidad,
+    required this.unidadMedida,
     required this.cantidadUnidades,
-    required this.kgPorUnidad,
-    required this.kilosTotales,
+    required this.cantidadPorUnidad,
+    required this.stockTotal,
     required this.inversionTotal,
-    required this.precioVentaKg,
+    required this.precioUnitario,
     required this.estado,
     required this.creadoPor,
     this.cerradoPor,
@@ -106,16 +108,19 @@ class CuentaModel {
         nombre: json['nombre'] as String,
         producto: json['producto'] as String,
         tipoUnidad: json['tipo_unidad'] as String,
+        unidadMedida: json['unidad_medida'] as String? ?? 'und',
         cantidadUnidades: (json['cantidad_unidades'] as num).toDouble(),
-        kgPorUnidad: (json['kg_por_unidad'] as num).toDouble(),
-        kilosTotales: (json['kilos_totales'] as num).toDouble(),
+        cantidadPorUnidad: (json['cantidad_por_unidad'] as num).toDouble(),
+        stockTotal: (json['stock_total'] as num).toDouble(),
         inversionTotal: (json['inversion_total'] as num).toDouble(),
-        precioVentaKg: (json['precio_venta_kg'] as num).toDouble(),
+        precioUnitario: (json['precio_unitario'] as num).toDouble(),
         estado: json['estado'] as String,
         creadoPor: json['creado_por'] as String,
         cerradoPor: json['cerrado_por'] as String?,
         fechaApertura: DateTime.parse(json['fecha_apertura'] as String),
-        fechaCierre: json['fecha_cierre'] != null ? DateTime.parse(json['fecha_cierre'] as String) : null,
+        fechaCierre: json['fecha_cierre'] != null
+            ? DateTime.parse(json['fecha_cierre'] as String)
+            : null,
         createdAt: DateTime.parse(json['created_at'] as String),
       );
 
@@ -124,15 +129,16 @@ class CuentaModel {
         'nombre': nombre,
         'producto': producto,
         'tipo_unidad': tipoUnidad,
+        'unidad_medida': unidadMedida,
         'cantidad_unidades': cantidadUnidades,
-        'kg_por_unidad': kgPorUnidad,
+        'cantidad_por_unidad': cantidadPorUnidad,
         'inversion_total': inversionTotal,
-        'precio_venta_kg': precioVentaKg,
+        'precio_unitario': precioUnitario,
         'creado_por': creadoPor,
         'fecha_apertura': fechaApertura.toIso8601String().substring(0, 10),
       };
 
-  double get ingresosEstimados => kilosTotales * precioVentaKg;
+  double get ingresosEstimados => stockTotal * precioUnitario;
   double get gananciaEstimada => ingresosEstimados - inversionTotal;
   bool get estaAbierta => estado == 'abierta';
 }
@@ -143,8 +149,8 @@ class VentaModel {
   final String registradoPor;
   final String registradoPorNombre;
   final String cliente;
-  final double kilosVendidos;
-  final double precioPorKg;
+  final double cantidadVendida;
+  final double precioUnitario;
   final double totalVenta;
   final double totalAbonado;
   final double saldoPendiente;
@@ -158,8 +164,8 @@ class VentaModel {
     required this.registradoPor,
     required this.registradoPorNombre,
     required this.cliente,
-    required this.kilosVendidos,
-    required this.precioPorKg,
+    required this.cantidadVendida,
+    required this.precioUnitario,
     required this.totalVenta,
     required this.totalAbonado,
     required this.saldoPendiente,
@@ -174,8 +180,8 @@ class VentaModel {
         registradoPor: json['registrado_por'] as String,
         registradoPorNombre: json['registrado_por_nombre'] as String? ?? '',
         cliente: json['cliente'] as String,
-        kilosVendidos: (json['kilos_vendidos'] as num).toDouble(),
-        precioPorKg: (json['precio_por_kg'] as num).toDouble(),
+        cantidadVendida: (json['cantidad_vendida'] as num).toDouble(),
+        precioUnitario: (json['precio_unitario'] as num).toDouble(),
         totalVenta: (json['total_venta'] as num).toDouble(),
         totalAbonado: (json['total_abonado'] as num).toDouble(),
         saldoPendiente: (json['saldo_pendiente'] as num).toDouble(),
@@ -188,8 +194,8 @@ class VentaModel {
         'cuenta_id': cuentaId,
         'registrado_por': registradoPor,
         'cliente': cliente,
-        'kilos_vendidos': kilosVendidos,
-        'precio_por_kg': precioPorKg,
+        'cantidad_vendida': cantidadVendida,
+        'precio_unitario': precioUnitario,
         'fecha_venta': fechaVenta.toIso8601String().substring(0, 10),
       };
 
@@ -252,7 +258,8 @@ class AbonoDetalleModel extends AbonoModel {
     this.registradoPorNombre,
   });
 
-  factory AbonoDetalleModel.fromJson(Map<String, dynamic> json) => AbonoDetalleModel(
+  factory AbonoDetalleModel.fromJson(Map<String, dynamic> json) =>
+      AbonoDetalleModel(
         id: json['id'] as String,
         ventaId: json['venta_id'] as String,
         registradoPor: json['registrado_por'] as String,
@@ -271,6 +278,7 @@ class GastoModel {
   final String registradoPor;
   final String registradoPorNombre;
   final String descripcion;
+  final String? categoria;
   final double monto;
   final DateTime fechaGasto;
   final DateTime createdAt;
@@ -281,6 +289,7 @@ class GastoModel {
     required this.registradoPor,
     required this.registradoPorNombre,
     required this.descripcion,
+    this.categoria,
     required this.monto,
     required this.fechaGasto,
     required this.createdAt,
@@ -292,6 +301,7 @@ class GastoModel {
         registradoPor: json['registrado_por'] as String,
         registradoPorNombre: json['registrado_por_nombre'] as String? ?? '',
         descripcion: json['descripcion'] as String,
+        categoria: json['categoria'] as String?,
         monto: (json['monto'] as num).toDouble(),
         fechaGasto: DateTime.parse(json['fecha_gasto'] as String),
         createdAt: DateTime.parse(json['created_at'] as String),
@@ -301,6 +311,7 @@ class GastoModel {
         'cuenta_id': cuentaId,
         'registrado_por': registradoPor,
         'descripcion': descripcion,
+        'categoria': categoria,
         'monto': monto,
         'fecha_gasto': fechaGasto.toIso8601String().substring(0, 10),
       };
@@ -312,17 +323,18 @@ class CuentaResumenModel {
   final String nombre;
   final String producto;
   final String tipoUnidad;
+  final String unidadMedida;
   final double cantidadUnidades;
-  final double kgPorUnidad;
-  final double kilosTotales;
+  final double cantidadPorUnidad;
+  final double stockTotal;
   final double inversionTotal;
-  final double precioVentaKg;
+  final double precioUnitario;
   final String estado;
   final DateTime fechaApertura;
   final DateTime? fechaCierre;
   final double ingresosBrutos;
-  final double kilosVendidos;
-  final double kilosRestantes;
+  final double cantidadVendida;
+  final double stockRestante;
   final double totalCobrado;
   final double totalGastos;
   final double gananciaReal;
@@ -333,47 +345,53 @@ class CuentaResumenModel {
     required this.nombre,
     required this.producto,
     required this.tipoUnidad,
+    required this.unidadMedida,
     required this.cantidadUnidades,
-    required this.kgPorUnidad,
-    required this.kilosTotales,
+    required this.cantidadPorUnidad,
+    required this.stockTotal,
     required this.inversionTotal,
-    required this.precioVentaKg,
+    required this.precioUnitario,
     required this.estado,
     required this.fechaApertura,
     this.fechaCierre,
     required this.ingresosBrutos,
-    required this.kilosVendidos,
-    required this.kilosRestantes,
+    required this.cantidadVendida,
+    required this.stockRestante,
     required this.totalCobrado,
     required this.totalGastos,
     required this.gananciaReal,
   });
 
-  factory CuentaResumenModel.fromJson(Map<String, dynamic> json) => CuentaResumenModel(
+  factory CuentaResumenModel.fromJson(Map<String, dynamic> json) =>
+      CuentaResumenModel(
         id: json['id'] as String,
         proyectoId: json['proyecto_id'] as String,
         nombre: json['nombre'] as String,
         producto: json['producto'] as String,
         tipoUnidad: json['tipo_unidad'] as String,
+        unidadMedida: json['unidad_medida'] as String? ?? 'und',
         cantidadUnidades: (json['cantidad_unidades'] as num).toDouble(),
-        kgPorUnidad: (json['kg_por_unidad'] as num).toDouble(),
-        kilosTotales: (json['kilos_totales'] as num).toDouble(),
+        cantidadPorUnidad: (json['cantidad_por_unidad'] as num).toDouble(),
+        stockTotal: (json['stock_total'] as num).toDouble(),
         inversionTotal: (json['inversion_total'] as num).toDouble(),
-        precioVentaKg: (json['precio_venta_kg'] as num).toDouble(),
+        precioUnitario: (json['precio_unitario'] as num).toDouble(),
         estado: json['estado'] as String,
         fechaApertura: DateTime.parse(json['fecha_apertura'] as String),
-        fechaCierre: json['fecha_cierre'] != null ? DateTime.parse(json['fecha_cierre'] as String) : null,
+        fechaCierre: json['fecha_cierre'] != null
+            ? DateTime.parse(json['fecha_cierre'] as String)
+            : null,
         ingresosBrutos: (json['ingresos_brutos'] as num).toDouble(),
-        kilosVendidos: (json['kilos_vendidos'] as num).toDouble(),
-        kilosRestantes: (json['kilos_restantes'] as num).toDouble(),
+        cantidadVendida: (json['cantidad_vendida'] as num).toDouble(),
+        stockRestante: (json['stock_restante'] as num).toDouble(),
         totalCobrado: (json['total_cobrado'] as num).toDouble(),
         totalGastos: (json['total_gastos'] as num).toDouble(),
         gananciaReal: (json['ganancia_real'] as num).toDouble(),
       );
 
   bool get estaAbierta => estado == 'abierta';
-  double get porcentajeVendido => kilosTotales > 0 ? (kilosVendidos / kilosTotales).clamp(0.0, 1.0) : 0.0;
-  double get ingresosEstimados => kilosTotales * precioVentaKg;
+  double get porcentajeVendido =>
+      stockTotal > 0 ? (cantidadVendida / stockTotal).clamp(0.0, 1.0) : 0.0;
+  double get ingresosEstimados => stockTotal * precioUnitario;
   double get gananciaEstimada => ingresosEstimados - inversionTotal;
 }
 
@@ -400,15 +418,18 @@ class TransaccionGeneralModel {
     required this.createdAt,
   });
 
-  factory TransaccionGeneralModel.fromJson(Map<String, dynamic> json) => TransaccionGeneralModel(
+  factory TransaccionGeneralModel.fromJson(Map<String, dynamic> json) =>
+      TransaccionGeneralModel(
         id: json['id'] as String,
         proyectoId: json['proyecto_id'] as String,
         registradoPor: json['registrado_por'] as String,
-        registradoPorNombre: json['registrado_por_nombre'] as String? ?? 'Desconocido',
+        registradoPorNombre:
+            json['registrado_por_nombre'] as String? ?? 'Desconocido',
         tipo: json['tipo'] as String,
         descripcion: json['descripcion'] as String,
         monto: (json['monto'] as num).toDouble(),
-        fechaTransaccion: DateTime.parse(json['fecha_transaccion'] as String),
+        fechaTransaccion:
+            DateTime.parse(json['fecha_transaccion'] as String),
         createdAt: DateTime.parse(json['created_at'] as String),
       );
 }
@@ -422,8 +443,8 @@ class VentaReporteItemModel extends VentaModel {
     required super.registradoPor,
     required super.registradoPorNombre,
     required super.cliente,
-    required super.kilosVendidos,
-    required super.precioPorKg,
+    required super.cantidadVendida,
+    required super.precioUnitario,
     required super.totalVenta,
     required super.totalAbonado,
     required super.saldoPendiente,
@@ -433,14 +454,16 @@ class VentaReporteItemModel extends VentaModel {
     required this.cuentaNombre,
   });
 
-  factory VentaReporteItemModel.fromJson(Map<String, dynamic> json) => VentaReporteItemModel(
+  factory VentaReporteItemModel.fromJson(Map<String, dynamic> json) =>
+      VentaReporteItemModel(
         id: json['id'] as String,
         cuentaId: json['cuenta_id'] as String,
         registradoPor: json['registrado_por'] as String,
-        registradoPorNombre: json['registrado_por_nombre'] as String? ?? 'Desconocido',
+        registradoPorNombre:
+            json['registrado_por_nombre'] as String? ?? 'Desconocido',
         cliente: json['cliente'] as String,
-        kilosVendidos: (json['kilos_vendidos'] as num).toDouble(),
-        precioPorKg: (json['precio_por_kg'] as num).toDouble(),
+        cantidadVendida: (json['cantidad_vendida'] as num).toDouble(),
+        precioUnitario: (json['precio_unitario'] as num).toDouble(),
         totalVenta: (json['total_venta'] as num).toDouble(),
         totalAbonado: (json['total_abonado'] as num).toDouble(),
         saldoPendiente: (json['saldo_pendiente'] as num).toDouble(),
@@ -460,18 +483,22 @@ class GastoReporteItemModel extends GastoModel {
     required super.registradoPor,
     required super.registradoPorNombre,
     required super.descripcion,
+    super.categoria,
     required super.monto,
     required super.fechaGasto,
     required super.createdAt,
     required this.cuentaNombre,
   });
 
-  factory GastoReporteItemModel.fromJson(Map<String, dynamic> json) => GastoReporteItemModel(
+  factory GastoReporteItemModel.fromJson(Map<String, dynamic> json) =>
+      GastoReporteItemModel(
         id: json['id'] as String,
         cuentaId: json['cuenta_id'] as String,
         registradoPor: json['registrado_por'] as String,
-        registradoPorNombre: json['registrado_por_nombre'] as String? ?? 'Desconocido',
+        registradoPorNombre:
+            json['registrado_por_nombre'] as String? ?? 'Desconocido',
         descripcion: json['descripcion'] as String,
+        categoria: json['categoria'] as String?,
         monto: (json['monto'] as num).toDouble(),
         fechaGasto: DateTime.parse(json['fecha_gasto'] as String),
         createdAt: DateTime.parse(json['created_at'] as String),
@@ -497,11 +524,13 @@ class AbonoReporteItemModel extends AbonoModel {
     this.cliente,
   });
 
-  factory AbonoReporteItemModel.fromJson(Map<String, dynamic> json) => AbonoReporteItemModel(
+  factory AbonoReporteItemModel.fromJson(Map<String, dynamic> json) =>
+      AbonoReporteItemModel(
         id: json['id'] as String,
         ventaId: json['venta_id'] as String,
         registradoPor: json['registrado_por'] as String,
-        registradoPorNombre: json['registrado_por_nombre'] as String? ?? 'Desconocido',
+        registradoPorNombre:
+            json['registrado_por_nombre'] as String? ?? 'Desconocido',
         monto: (json['monto'] as num).toDouble(),
         fechaAbono: DateTime.parse(json['fecha_abono'] as String),
         nota: json['nota'] as String?,
@@ -519,9 +548,9 @@ class ProyectoReporteData {
   final double totalCobrado;
   final double totalGastos;
   final double gananciaReal;
-  final double kilosTotales;
-  final double kilosVendidos;
-  final double kilosRestantes;
+  final double stockTotal;
+  final double cantidadVendida;
+  final double stockRestante;
   final List<VentaReporteItemModel> ventas;
   final List<GastoReporteItemModel> gastos;
   final List<AbonoReporteItemModel> abonos;
@@ -534,15 +563,16 @@ class ProyectoReporteData {
     required this.totalCobrado,
     required this.totalGastos,
     required this.gananciaReal,
-    required this.kilosTotales,
-    required this.kilosVendidos,
-    required this.kilosRestantes,
+    required this.stockTotal,
+    required this.cantidadVendida,
+    required this.stockRestante,
     required this.ventas,
     required this.gastos,
     required this.abonos,
   });
 
-  factory ProyectoReporteData.fromJson(Map<String, dynamic> json) => ProyectoReporteData(
+  factory ProyectoReporteData.fromJson(Map<String, dynamic> json) =>
+      ProyectoReporteData(
         proyectoId: json['proyecto_id'] as String,
         proyectoNombre: json['proyecto_nombre'] as String,
         inversionTotal: (json['inversion_total'] as num).toDouble(),
@@ -550,11 +580,17 @@ class ProyectoReporteData {
         totalCobrado: (json['total_cobrado'] as num).toDouble(),
         totalGastos: (json['total_gastos'] as num).toDouble(),
         gananciaReal: (json['ganancia_real'] as num).toDouble(),
-        kilosTotales: (json['kilos_totales'] as num).toDouble(),
-        kilosVendidos: (json['kilos_vendidos'] as num).toDouble(),
-        kilosRestantes: (json['kilos_restantes'] as num).toDouble(),
-        ventas: (json['ventas'] as List).map((v) => VentaReporteItemModel.fromJson(v)).toList(),
-        gastos: (json['gastos'] as List).map((g) => GastoReporteItemModel.fromJson(g)).toList(),
-        abonos: (json['abonos'] as List).map((a) => AbonoReporteItemModel.fromJson(a)).toList(),
+        stockTotal: (json['stock_total'] as num).toDouble(),
+        cantidadVendida: (json['cantidad_vendida'] as num).toDouble(),
+        stockRestante: (json['stock_restante'] as num).toDouble(),
+        ventas: (json['ventas'] as List)
+            .map((v) => VentaReporteItemModel.fromJson(v))
+            .toList(),
+        gastos: (json['gastos'] as List)
+            .map((g) => GastoReporteItemModel.fromJson(g))
+            .toList(),
+        abonos: (json['abonos'] as List)
+            .map((a) => AbonoReporteItemModel.fromJson(a))
+            .toList(),
       );
 }

@@ -90,6 +90,21 @@ class ProyectoRepository {
     await _api.client.delete('/proyectos/transacciones/$id');
   }
 
+  Future<void> updateTransaccion(
+    String id,
+    String tipo,
+    String descripcion,
+    double monto,
+    DateTime fecha,
+  ) async {
+    await _api.client.put('/proyectos/transacciones/$id', data: {
+      'tipo': tipo,
+      'descripcion': descripcion,
+      'monto': monto,
+      'fecha_transaccion': fecha.toIso8601String().substring(0, 10),
+    });
+  }
+
   Future<ProyectoReporteData> getReporteDatos(String proyectoId) async {
     final res = await _api.client.get('/proyectos/$proyectoId/reporte_datos');
     return ProyectoReporteData.fromJson(res.data);

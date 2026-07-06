@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:excel/excel.dart' as xl;
@@ -225,11 +225,11 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
 
       if (incluyeStock) {
         addRow(resumenSheet, ['  INVENTARIO GLOBAL', ''], style: headerStyle);
-        addRow(resumenSheet, ['  Kilos Totales Comprados', '${reporteData.kilosTotales.toStringAsFixed(1)} kg'],
+        addRow(resumenSheet, ['  Stock Total Comprado', '${reporteData.stockTotal.toStringAsFixed(1)}'],
             styles: [labelStyle, valueStyle]);
-        addRow(resumenSheet, ['  Kilos Vendidos', '${reporteData.kilosVendidos.toStringAsFixed(1)} kg'],
+        addRow(resumenSheet, ['  Cantidad Vendida', '${reporteData.cantidadVendida.toStringAsFixed(1)}'],
             styles: [labelStyle, valueStyle]);
-        addRow(resumenSheet, ['  Kilos Restantes (Stock)', '${reporteData.kilosRestantes.toStringAsFixed(1)} kg'],
+        addRow(resumenSheet, ['  Stock Restante', '${reporteData.stockRestante.toStringAsFixed(1)}'],
             styles: [labelStyle, valueStyle]);
         addRow(resumenSheet, []);
       }
@@ -242,7 +242,7 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
         addRow(clientesSheet, [
           'Cliente',
           'Cuenta',
-          'Kilos Totales',
+          'Cantidad Vendida',
           'Monto Total',
           'Total Abonado',
           'Saldo Pendiente',
@@ -261,7 +261,7 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
               'cuenta': v.cuentaNombre,
             };
           }
-          mapClientes[c]!['kilos'] = (mapClientes[c]!['kilos'] as double) + v.kilosVendidos;
+          mapClientes[c]!['kilos'] = (mapClientes[c]!['kilos'] as double) + v.cantidadVendida;
           mapClientes[c]!['monto'] = (mapClientes[c]!['monto'] as double) + v.totalVenta;
           mapClientes[c]!['abonado'] = (mapClientes[c]!['abonado'] as double) + v.totalAbonado;
           mapClientes[c]!['saldo'] = (mapClientes[c]!['saldo'] as double) + v.saldoPendiente;
@@ -275,7 +275,7 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
           addRow(clientesSheet, [
             entry.value['cliente'] as String,
             entry.value['cuenta'] as String,
-            '${(entry.value['kilos'] as double).toStringAsFixed(1)} kg',
+            '${(entry.value['kilos'] as double).toStringAsFixed(1)}',
             '$sym ${(entry.value['monto'] as double).toStringAsFixed(2)}',
             '$sym ${(entry.value['abonado'] as double).toStringAsFixed(2)}',
             '$sym ${(entry.value['saldo'] as double).toStringAsFixed(2)}',
@@ -290,7 +290,7 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
         addRow(clientesSheet, [
           'TOTALES',
           '',
-          '${totalKgClientes.toStringAsFixed(1)} kg',
+          '${totalKgClientes.toStringAsFixed(1)}',
           '$sym ${totalMontoClientes.toStringAsFixed(2)}',
           '$sym ${totalAbonadoClientes.toStringAsFixed(2)}',
           '$sym ${totalSaldoClientes.toStringAsFixed(2)}',
@@ -305,8 +305,8 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
           'Fecha',
           'Cuenta',
           'Cliente',
-          'Kilos',
-          'Precio/Kg',
+          'Cantidad',
+          'Precio Unit.',
           'Total Venta',
           'Abonado',
           'Saldo',
@@ -318,8 +318,8 @@ class _ReportesScreenState extends ConsumerState<ReportesScreen> {
             fmt.format(v.fechaVenta),
             v.cuentaNombre,
             v.cliente,
-            '${v.kilosVendidos.toStringAsFixed(1)} kg',
-            '$sym ${v.precioPorKg.toStringAsFixed(2)}',
+            '${v.cantidadVendida.toStringAsFixed(1)}',
+            '$sym ${v.precioUnitario.toStringAsFixed(2)}',
             '$sym ${v.totalVenta.toStringAsFixed(2)}',
             '$sym ${v.totalAbonado.toStringAsFixed(2)}',
             '$sym ${v.saldoPendiente.toStringAsFixed(2)}',

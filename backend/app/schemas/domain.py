@@ -39,7 +39,6 @@ class ProyectoInvite(BaseModel):
 class ProyectoMiembroUpdate(BaseModel):
     rol: str
 
-
 class ProyectoResponse(BaseModel):
     id: str
     nombre: str
@@ -58,10 +57,11 @@ class CuentaCreate(BaseModel):
     nombre: str
     producto: str
     tipo_unidad: str
+    unidad_medida: str = "und"
     cantidad_unidades: float
-    kg_por_unidad: float
+    cantidad_por_unidad: float = 1.0
     inversion_total: float
-    precio_venta_kg: float
+    precio_unitario: float
     fecha_apertura: date
 
 class CuentaResponse(BaseModel):
@@ -70,11 +70,12 @@ class CuentaResponse(BaseModel):
     nombre: str
     producto: str
     tipo_unidad: str
+    unidad_medida: str
     cantidad_unidades: float
-    kg_por_unidad: float
-    kilos_totales: float
+    cantidad_por_unidad: float
+    stock_total: float
     inversion_total: float
-    precio_venta_kg: float
+    precio_unitario: float
     estado: str
     creado_por: str
     cerrado_por: Optional[str] = None
@@ -82,11 +83,10 @@ class CuentaResponse(BaseModel):
     fecha_cierre: Optional[date] = None
     created_at: datetime
     updated_at: datetime
-    
-    # Campos calculados a retornar
+
+    cantidad_vendida: float = 0.0
+    stock_restante: float = 0.0
     ingresos_brutos: float = 0.0
-    kilos_vendidos: float = 0.0
-    kilos_restantes: float = 0.0
     total_cobrado: float = 0.0
     total_gastos: float = 0.0
     ganancia_real: float = 0.0
@@ -97,9 +97,9 @@ class CuentaResponse(BaseModel):
 class VentaCreate(BaseModel):
     cuenta_id: str
     cliente: str
-    precio_por_kg: float
+    precio_unitario: float
     fecha_venta: date
-    kilos_vendidos: Optional[float] = None
+    cantidad_vendida: Optional[float] = None
     monto_inicial_pagado: Optional[float] = None
     total_venta: Optional[float] = None
 
@@ -109,13 +109,12 @@ class VentaResponse(BaseModel):
     registrado_por: str
     registrado_por_nombre: Optional[str] = None
     cliente: str
-    kilos_vendidos: float
-    precio_por_kg: float
+    cantidad_vendida: float
+    precio_unitario: float
     total_venta: float
     fecha_venta: date
     created_at: datetime
-    
-    # Calculados
+
     total_abonado: float = 0.0
     saldo_pendiente: float = 0.0
     estado_pago: str = "Pendiente"
@@ -148,6 +147,7 @@ class AbonoDetalleResponse(AbonoResponse):
 class GastoCreate(BaseModel):
     cuenta_id: str
     descripcion: str
+    categoria: Optional[str] = None
     monto: float
     fecha_gasto: date
 
@@ -157,6 +157,7 @@ class GastoResponse(BaseModel):
     registrado_por: str
     registrado_por_nombre: Optional[str] = None
     descripcion: str
+    categoria: Optional[str] = None
     monto: float
     fecha_gasto: date
     created_at: datetime
@@ -166,10 +167,16 @@ class GastoResponse(BaseModel):
 
 class TransaccionGeneralCreate(BaseModel):
     proyecto_id: str
-    tipo: str # 'ingreso' or 'gasto'
+    tipo: str
     descripcion: str
     monto: float
     fecha_transaccion: date
+
+class TransaccionGeneralUpdate(BaseModel):
+    tipo: Optional[str] = None
+    descripcion: Optional[str] = None
+    monto: Optional[float] = None
+    fecha_transaccion: Optional[date] = None
 
 class TransaccionGeneralResponse(BaseModel):
     id: str
@@ -185,8 +192,6 @@ class TransaccionGeneralResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# --- UPDATE SCHEMAS ---
-
 class ProyectoUpdate(BaseModel):
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
@@ -195,16 +200,18 @@ class CuentaUpdate(BaseModel):
     nombre: Optional[str] = None
     producto: Optional[str] = None
     tipo_unidad: Optional[str] = None
+    unidad_medida: Optional[str] = None
     cantidad_unidades: Optional[float] = None
-    kg_por_unidad: Optional[float] = None
+    cantidad_por_unidad: Optional[float] = None
     inversion_total: Optional[float] = None
-    precio_venta_kg: Optional[float] = None
+    precio_unitario: Optional[float] = None
     fecha_apertura: Optional[date] = None
 
 class VentaUpdate(BaseModel):
     cliente: Optional[str] = None
-    kilos_vendidos: Optional[float] = None
-    precio_por_kg: Optional[float] = None
+    cantidad_vendida: Optional[float] = None
+    precio_unitario: Optional[float] = None
+    total_venta: Optional[float] = None
     fecha_venta: Optional[date] = None
 
 class AbonoUpdate(BaseModel):
@@ -214,10 +221,9 @@ class AbonoUpdate(BaseModel):
 
 class GastoUpdate(BaseModel):
     descripcion: Optional[str] = None
+    categoria: Optional[str] = None
     monto: Optional[float] = None
     fecha_gasto: Optional[date] = None
-
-# --- REPORTE SCHEMAS ---
 
 class VentaReporteItem(VentaResponse):
     cuenta_nombre: str
@@ -238,9 +244,9 @@ class ProyectoReporteResponse(BaseModel):
     total_cobrado: float
     total_gastos: float
     ganancia_real: float
-    kilos_totales: float
-    kilos_vendidos: float
-    kilos_restantes: float
+    stock_total: float
+    cantidad_vendida: float
+    stock_restante: float
     ventas: List[VentaReporteItem]
     gastos: List[GastoReporteItem]
     abonos: List[AbonoReporteItem]

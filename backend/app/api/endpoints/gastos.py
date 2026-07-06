@@ -20,19 +20,23 @@ async def update_gasto(
     gasto = result.scalars().first()
     if not gasto:
         raise HTTPException(status_code=404, detail="Gasto no encontrado")
-        
+
     if gasto_in.descripcion is not None:
         gasto.descripcion = gasto_in.descripcion
+    if gasto_in.categoria is not None:
+        gasto.categoria = gasto_in.categoria
     if gasto_in.monto is not None:
         gasto.monto = gasto_in.monto
     if gasto_in.fecha_gasto is not None:
         gasto.fecha_gasto = gasto_in.fecha_gasto
-        
+
     await db.commit()
     await db.refresh(gasto)
-    
+
+    stmt_p = select(Perfil).filter(Perfil.id == gasto.registrado_por)
+    perfil = (await db.execute(stmt_p)).scalars().first()
     g_dict = gasto.__dict__.copy()
-    g_dict['registrado_por_nombre'] = ""
+    g_dict['registrado_por_nombre'] = perfil.nombre if perfil else ""
     return g_dict
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -45,7 +49,6 @@ async def delete_gasto(
     gasto = result.scalars().first()
     if not gasto:
         raise HTTPException(status_code=404, detail="Gasto no encontrado")
-        
     await db.delete(gasto)
     await db.commit()
     return None
@@ -56,12 +59,11 @@ async def create_gasto(
     current_user: Perfil = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    # Verify account & permissions
     result = await db.execute(select(Cuenta).filter(Cuenta.id == gasto_in.cuenta_id))
     cuenta = result.scalars().first()
     if not cuenta:
         raise HTTPException(status_code=404, detail="Cuenta no encontrada")
-        
+
     stmt = select(ProyectoMiembro).filter(
         ProyectoMiembro.proyecto_id == cuenta.proyecto_id,
         ProyectoMiembro.usuario_id == current_user.id
@@ -73,13 +75,14 @@ async def create_gasto(
         cuenta_id=gasto_in.cuenta_id,
         registrado_por=current_user.id,
         descripcion=gasto_in.descripcion,
+        categoria=gasto_in.categoria,
         monto=gasto_in.monto,
         fecha_gasto=gasto_in.fecha_gasto
     )
     db.add(db_gasto)
     await db.commit()
     await db.refresh(db_gasto)
-    
+
     g_dict = db_gasto.__dict__.copy()
     g_dict['registrado_por_nombre'] = current_user.nombre
     return g_dict
@@ -90,12 +93,11 @@ async def get_gastos(
     current_user: Perfil = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    # Verify account & permissions
     result = await db.execute(select(Cuenta).filter(Cuenta.id == cuenta_id))
     cuenta = result.scalars().first()
     if not cuenta:
         raise HTTPException(status_code=404, detail="Cuenta no encontrada")
-        
+
     stmt = select(ProyectoMiembro).filter(
         ProyectoMiembro.proyecto_id == cuenta.proyecto_id,
         ProyectoMiembro.usuario_id == current_user.id
@@ -103,15 +105,13 @@ async def get_gastos(
     if not (await db.execute(stmt)).scalars().first():
         raise HTTPException(status_code=403, detail="No eres miembro")
 
-    # Fetch Gastos with user names
     stmt_gastos = select(Gasto, Perfil.nombre).join(Perfil).filter(Gasto.cuenta_id == cuenta_id).order_by(Gasto.fecha_gasto.desc())
     result_gastos = await db.execute(stmt_gastos)
     gastos_data = result_gastos.all()
-    
+
     response = []
     for g, p_nombre in gastos_data:
         g_dict = g.__dict__.copy()
         g_dict['registrado_por_nombre'] = p_nombre
         response.append(g_dict)
-        
     return response
