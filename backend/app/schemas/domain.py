@@ -32,6 +32,10 @@ class ProyectoCreate(BaseModel):
     descripcion: Optional[str] = None
     moneda_simbolo: str
     moneda_codigo: str
+    producto_default: Optional[str] = None
+    tipo_unidad_default: Optional[str] = None
+    unidad_medida_default: Optional[str] = None
+    cantidad_por_unidad_default: Optional[float] = None
 
 class ProyectoInvite(BaseModel):
     email: EmailStr
@@ -45,6 +49,10 @@ class ProyectoResponse(BaseModel):
     descripcion: Optional[str] = None
     moneda_simbolo: str
     moneda_codigo: str
+    producto_default: Optional[str] = None
+    tipo_unidad_default: Optional[str] = None
+    unidad_medida_default: Optional[str] = None
+    cantidad_por_unidad_default: Optional[float] = None
     creado_por: str
     created_at: datetime
     updated_at: datetime
@@ -195,6 +203,10 @@ class TransaccionGeneralResponse(BaseModel):
 class ProyectoUpdate(BaseModel):
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
+    producto_default: Optional[str] = None
+    tipo_unidad_default: Optional[str] = None
+    unidad_medida_default: Optional[str] = None
+    cantidad_por_unidad_default: Optional[float] = None
 
 class CuentaUpdate(BaseModel):
     nombre: Optional[str] = None

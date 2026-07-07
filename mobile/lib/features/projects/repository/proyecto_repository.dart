@@ -17,12 +17,20 @@ class ProyectoRepository {
     required String monedaSimbolo,
     required String monedaCodigo,
     required String creadoPor,
+    String? productoDefault,
+    String? tipoUnidadDefault,
+    String? unidadMedidaDefault,
+    double? cantidadPorUnidadDefault,
   }) async {
     final res = await _api.client.post('/proyectos', data: {
       'nombre': nombre.trim(),
       'descripcion': descripcion?.trim(),
       'moneda_simbolo': monedaSimbolo,
       'moneda_codigo': monedaCodigo,
+      if (productoDefault != null) 'producto_default': productoDefault.trim(),
+      if (tipoUnidadDefault != null) 'tipo_unidad_default': tipoUnidadDefault.trim(),
+      if (unidadMedidaDefault != null) 'unidad_medida_default': unidadMedidaDefault,
+      if (cantidadPorUnidadDefault != null) 'cantidad_por_unidad_default': cantidadPorUnidadDefault,
     });
     return ProyectoModel.fromJson(res.data);
   }
@@ -31,10 +39,18 @@ class ProyectoRepository {
     String id, {
     String? nombre,
     String? descripcion,
+    String? productoDefault,
+    String? tipoUnidadDefault,
+    String? unidadMedidaDefault,
+    double? cantidadPorUnidadDefault,
   }) async {
     final updates = <String, dynamic>{};
     if (nombre != null) updates['nombre'] = nombre.trim();
     if (descripcion != null) updates['descripcion'] = descripcion.trim();
+    if (productoDefault != null) updates['producto_default'] = productoDefault.trim();
+    if (tipoUnidadDefault != null) updates['tipo_unidad_default'] = tipoUnidadDefault.trim();
+    if (unidadMedidaDefault != null) updates['unidad_medida_default'] = unidadMedidaDefault;
+    if (cantidadPorUnidadDefault != null) updates['cantidad_por_unidad_default'] = cantidadPorUnidadDefault;
     if (updates.isEmpty) return;
 
     await _api.client.put('/proyectos/$id', data: updates);

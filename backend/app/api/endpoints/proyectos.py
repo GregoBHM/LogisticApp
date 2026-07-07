@@ -39,6 +39,14 @@ async def update_proyecto(
         proyecto.nombre = proyecto_in.nombre
     if proyecto_in.descripcion is not None:
         proyecto.descripcion = proyecto_in.descripcion
+    if proyecto_in.producto_default is not None:
+        proyecto.producto_default = proyecto_in.producto_default
+    if proyecto_in.tipo_unidad_default is not None:
+        proyecto.tipo_unidad_default = proyecto_in.tipo_unidad_default
+    if proyecto_in.unidad_medida_default is not None:
+        proyecto.unidad_medida_default = proyecto_in.unidad_medida_default
+    if proyecto_in.cantidad_por_unidad_default is not None:
+        proyecto.cantidad_por_unidad_default = proyecto_in.cantidad_por_unidad_default
 
     await db.commit()
     await db.refresh(proyecto)
@@ -55,6 +63,10 @@ async def create_proyecto(
         descripcion=proyecto_in.descripcion,
         moneda_simbolo=proyecto_in.moneda_simbolo,
         moneda_codigo=proyecto_in.moneda_codigo,
+        producto_default=proyecto_in.producto_default,
+        tipo_unidad_default=proyecto_in.tipo_unidad_default,
+        unidad_medida_default=proyecto_in.unidad_medida_default,
+        cantidad_por_unidad_default=proyecto_in.cantidad_por_unidad_default,
         creado_por=current_user.id
     )
     db.add(db_proyecto)

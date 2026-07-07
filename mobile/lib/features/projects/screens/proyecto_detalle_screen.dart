@@ -890,7 +890,22 @@ class ProyectoDetalleScreen extends ConsumerWidget {
   void _showEditarProyectoSheet(BuildContext context, WidgetRef ref) {
     final nombreCtrl = TextEditingController(text: proyecto.nombre);
     final descCtrl = TextEditingController(text: proyecto.descripcion ?? '');
+    final productoCtrl = TextEditingController(
+      text: proyecto.productoDefault ?? '',
+    );
+    final tipoUnidadCtrl = TextEditingController(
+      text: proyecto.tipoUnidadDefault ?? '',
+    );
+    final cantPorUnidadCtrl = TextEditingController(
+      text: proyecto.cantidadPorUnidadDefault != null
+          ? proyecto.cantidadPorUnidadDefault!.toStringAsFixed(
+              proyecto.cantidadPorUnidadDefault! == proyecto.cantidadPorUnidadDefault!.roundToDouble() ? 0 : 1,
+            )
+          : '',
+    );
+    String? unidadMedida = proyecto.unidadMedidaDefault;
     bool loading = false;
+    final unidades = ['kg', 'lb', 'und', 'lt', 'pz', 'm'];
 
     showModalBottomSheet(
       context: context,
@@ -907,102 +922,213 @@ class ProyectoDetalleScreen extends ConsumerWidget {
             24,
             MediaQuery.of(ctx2).viewInsets.bottom + 32,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Editar Proyecto',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 20),
-              _sheetField(
-                nombreCtrl,
-                'Nombre del proyecto',
-                'Ej: Exportación Mango 2024',
-              ),
-              const SizedBox(height: 12),
-              _sheetField(
-                descCtrl,
-                'Descripción (Opcional)',
-                'Detalles del proyecto',
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: loading
-                      ? null
-                      : () async {
-                          if (nombreCtrl.text.trim().isEmpty) return;
-                          setModal(() => loading = true);
-                          try {
-                            final repo = ref.read(proyectoRepositoryProvider);
-                            await repo.actualizarProyecto(
-                              proyecto.id,
-                              nombre: nombreCtrl.text.trim(),
-                              descripcion: descCtrl.text.trim(),
-                            );
-                            if (context.mounted) {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Proyecto actualizado. Regresa y vuelve a entrar para ver cambios en la barra.',
-                                  ),
-                                ),
-                              );
-                              ref.invalidate(proyectosProvider);
-                            }
-                          } catch (e) {
-                            setModal(() => loading = false);
-                            if (context.mounted)
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(ErrorHandler.parse(e))),
-                              );
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.cream,
-                    foregroundColor: AppColors.background,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.borderLight,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  child: loading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: AppColors.background,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text('Guardar Cambios'),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                const Text(
+                  'Editar Proyecto',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _sheetField(
+                  nombreCtrl,
+                  'Nombre del proyecto',
+                  'Ej: Exportación Mango 2024',
+                ),
+                const SizedBox(height: 12),
+                _sheetField(
+                  descCtrl,
+                  'Descripción (Opcional)',
+                  'Detalles del proyecto',
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.cream.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(
+                        Icons.auto_fix_high_rounded,
+                        color: AppColors.cream,
+                        size: 14,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Plantilla de Operaciones',
+                      style: TextStyle(
+                        color: AppColors.cream,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _sheetField(
+                  productoCtrl,
+                  'Producto principal',
+                  'Ej: Papaya, Ropa, Café',
+                ),
+                const SizedBox(height: 12),
+                _sheetField(
+                  tipoUnidadCtrl,
+                  'Tipo de empaque',
+                  'Ej: Caja, Saco, Paquete',
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Unidad de medida',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: unidades.map((u) {
+                    final sel = unidadMedida == u;
+                    return GestureDetector(
+                      onTap: () => setModal(() => unidadMedida = u),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: sel ? AppColors.cream : AppColors.background,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: sel ? AppColors.cream : AppColors.border,
+                          ),
+                          boxShadow: sel
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.cream.withValues(alpha: 0.2),
+                                    blurRadius: 8,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Text(
+                          u,
+                          style: TextStyle(
+                            color: sel
+                                ? AppColors.background
+                                : AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                if (unidadMedida != null) ...[
+                  const SizedBox(height: 12),
+                  _sheetField(
+                    cantPorUnidadCtrl,
+                    'Cantidad por empaque ($unidadMedida)',
+                    'Ej: 20',
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: loading
+                        ? null
+                        : () async {
+                            if (nombreCtrl.text.trim().isEmpty) return;
+                            setModal(() => loading = true);
+                            try {
+                              final repo = ref.read(proyectoRepositoryProvider);
+                              await repo.actualizarProyecto(
+                                proyecto.id,
+                                nombre: nombreCtrl.text.trim(),
+                                descripcion: descCtrl.text.trim(),
+                                productoDefault: productoCtrl.text.trim().isNotEmpty
+                                    ? productoCtrl.text.trim()
+                                    : null,
+                                tipoUnidadDefault: tipoUnidadCtrl.text.trim().isNotEmpty
+                                    ? tipoUnidadCtrl.text.trim()
+                                    : null,
+                                unidadMedidaDefault: unidadMedida,
+                                cantidadPorUnidadDefault: double.tryParse(
+                                  cantPorUnidadCtrl.text,
+                                ),
+                              );
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Proyecto actualizado. Regresa y vuelve a entrar para ver cambios.',
+                                    ),
+                                  ),
+                                );
+                                ref.invalidate(proyectosProvider);
+                              }
+                            } catch (e) {
+                              setModal(() => loading = false);
+                              if (context.mounted)
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(ErrorHandler.parse(e))),
+                                );
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.cream,
+                      foregroundColor: AppColors.background,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: loading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: AppColors.background,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('Guardar Cambios'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+
 
   void _showEditarCuentaSheet(
     BuildContext context,
@@ -1325,13 +1451,23 @@ class ProyectoDetalleScreen extends ConsumerWidget {
 
   void _showNuevaCuentaSheet(BuildContext context, WidgetRef ref) {
     final nombreCtrl = TextEditingController();
-    final productoCtrl = TextEditingController();
-    final tipoUnidadCtrl = TextEditingController();
+    final productoCtrl = TextEditingController(
+      text: proyecto.productoDefault ?? '',
+    );
+    final tipoUnidadCtrl = TextEditingController(
+      text: proyecto.tipoUnidadDefault ?? '',
+    );
     final cantidadCtrl = TextEditingController();
-    final cantPorUnidadCtrl = TextEditingController();
+    final cantPorUnidadCtrl = TextEditingController(
+      text: proyecto.cantidadPorUnidadDefault != null
+          ? proyecto.cantidadPorUnidadDefault!.toStringAsFixed(
+              proyecto.cantidadPorUnidadDefault! == proyecto.cantidadPorUnidadDefault!.roundToDouble() ? 0 : 1,
+            )
+          : '',
+    );
     final inversionCtrl = TextEditingController();
     final precioCtrl = TextEditingController();
-    String unidadMedida = 'und';
+    String unidadMedida = proyecto.unidadMedidaDefault ?? 'und';
     DateTime fechaApertura = DateTime.now();
     bool loading = false;
 
@@ -1375,16 +1511,55 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
+                if (proyecto.productoDefault != null ||
+                    proyecto.tipoUnidadDefault != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.cream.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.cream.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.auto_fix_high_rounded,
+                            color: AppColors.cream.withValues(alpha: 0.6),
+                            size: 14,
+                          ),
+                          const SizedBox(width: 6),
+                          const Expanded(
+                            child: Text(
+                              'Campos pre-llenados desde la plantilla del proyecto',
+                              style: TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 _sheetField(
                   nombreCtrl,
                   'Nombre de la cuenta',
-                  'Ej: Caja Frutas Junio',
+                  'Ej: Camión del Lunes',
                 ),
                 const SizedBox(height: 12),
                 _sheetField(
                   productoCtrl,
                   'Producto o Servicio',
-                  'Ej: Mango, Ropa, Servicio',
+                  productoCtrl.text.isNotEmpty
+                      ? productoCtrl.text
+                      : 'Ej: Mango, Ropa, Servicio',
                 ),
                 const SizedBox(height: 12),
                 Row(

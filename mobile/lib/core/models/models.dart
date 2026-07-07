@@ -31,6 +31,10 @@ class ProyectoModel {
   final String? descripcion;
   final String monedaSimbolo;
   final String monedaCodigo;
+  final String? productoDefault;
+  final String? tipoUnidadDefault;
+  final String? unidadMedidaDefault;
+  final double? cantidadPorUnidadDefault;
   final String creadoPor;
   final DateTime createdAt;
 
@@ -40,6 +44,10 @@ class ProyectoModel {
     this.descripcion,
     required this.monedaSimbolo,
     required this.monedaCodigo,
+    this.productoDefault,
+    this.tipoUnidadDefault,
+    this.unidadMedidaDefault,
+    this.cantidadPorUnidadDefault,
     required this.creadoPor,
     required this.createdAt,
   });
@@ -50,6 +58,12 @@ class ProyectoModel {
         descripcion: json['descripcion'] as String?,
         monedaSimbolo: json['moneda_simbolo'] as String,
         monedaCodigo: json['moneda_codigo'] as String,
+        productoDefault: json['producto_default'] as String?,
+        tipoUnidadDefault: json['tipo_unidad_default'] as String?,
+        unidadMedidaDefault: json['unidad_medida_default'] as String?,
+        cantidadPorUnidadDefault: json['cantidad_por_unidad_default'] != null
+            ? (json['cantidad_por_unidad_default'] as num).toDouble()
+            : null,
         creadoPor: json['creado_por'] as String,
         createdAt: DateTime.parse(json['created_at'] as String),
       );
@@ -59,6 +73,10 @@ class ProyectoModel {
         'descripcion': descripcion,
         'moneda_simbolo': monedaSimbolo,
         'moneda_codigo': monedaCodigo,
+        'producto_default': productoDefault,
+        'tipo_unidad_default': tipoUnidadDefault,
+        'unidad_medida_default': unidadMedidaDefault,
+        'cantidad_por_unidad_default': cantidadPorUnidadDefault,
         'creado_por': creadoPor,
       };
 }

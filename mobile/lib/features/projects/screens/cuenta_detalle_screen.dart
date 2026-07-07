@@ -733,7 +733,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
     CuentaResumenModel liveCuenta,
   ) {
     final clienteCtrl = TextEditingController(text: v.cliente);
-    final cantidadCtrl = TextEditingController(text: v.cantidadVendida.toString());
+    final cantidadCtrl = TextEditingController(
+      text: v.cantidadVendida.toString(),
+    );
     final precioCtrl = TextEditingController(text: v.precioUnitario.toString());
     final totalCtrl = TextEditingController(text: v.totalVenta.toString());
     bool loading = false;
@@ -852,8 +854,12 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                   .actualizarVenta(
                                     v.id,
                                     cliente: clienteCtrl.text,
-                                    cantidadVendida: double.parse(cantidadCtrl.text),
-                                    precioUnitario: double.parse(precioCtrl.text),
+                                    cantidadVendida: double.parse(
+                                      cantidadCtrl.text,
+                                    ),
+                                    precioUnitario: double.parse(
+                                      precioCtrl.text,
+                                    ),
                                     totalVenta: double.tryParse(totalCtrl.text),
                                   );
                               if (context.mounted) {
@@ -1391,7 +1397,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
     CuentaResumenModel liveCuenta,
   ) {
     final clienteCtrl = TextEditingController();
-    final kilosCtrl = TextEditingController();
+    final cantidadCtrl = TextEditingController();
     final precioCtrl = TextEditingController(
       text: liveCuenta.precioUnitario.toStringAsFixed(2),
     );
@@ -1404,7 +1410,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
 
     void recalcTotal(void Function(void Function()) setModal) {
       setModal(() {
-        final k = double.tryParse(kilosCtrl.text) ?? 0;
+        final k = double.tryParse(cantidadCtrl.text) ?? 0;
         final p = double.tryParse(precioCtrl.text) ?? 0;
         if (k > 0 && p > 0) {
           totalCtrl.text = (k * p).toStringAsFixed(2);
@@ -1414,7 +1420,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
 
     void recalcPrecio(void Function(void Function()) setModal) {
       setModal(() {
-        final k = double.tryParse(kilosCtrl.text) ?? 0;
+        final k = double.tryParse(cantidadCtrl.text) ?? 0;
         final t = double.tryParse(totalCtrl.text) ?? 0;
         if (k > 0 && t > 0) {
           precioCtrl.text = (t / k).toStringAsFixed(2);
@@ -1495,7 +1501,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         ventaPorMonto = !ventaPorMonto;
                         if (ventaPorMonto) {
                           clienteCtrl.text = 'Público';
-                          kilosCtrl.clear();
+                          cantidadCtrl.clear();
                         } else {
                           clienteCtrl.clear();
                           totalCtrl.clear();
@@ -1546,8 +1552,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
                               ),
                               Text(
                                 ventaPorMonto
-                                    ? 'Pones el monto → kilos se calculan solos'
-                                    : 'Pones kilos → total se calcula solo',
+                                    ? 'Pones el monto → la cantidad se calcula sola'
+                                    : 'Pones cantidad → el total se calcula solo',
                                 style: const TextStyle(
                                   color: AppColors.textMuted,
                                   fontSize: 11,
@@ -1635,42 +1641,45 @@ class CuentaDetalleScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // CAMPOS: Kilos + Precio (modo normal) o solo Precio (modo público)
-                  if (!ventaPorMonto)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _sheetField(
-                            kilosCtrl,
-                            'Cantidad (${liveCuenta.unidadMedida})',
-                            'Ej: 29.8',
-                            keyboardType: TextInputType.number,
-                            onChanged: (_) {
-                              recalcTotal(setModal);
-                              recalcPrecio(setModal);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _sheetField(
+                  // CAMPOS: Cantidad + Precio (modo normal) o solo Precio (modo público)
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                    child: !ventaPorMonto
+                        ? Row(
+                            children: [
+                              Expanded(
+                                child: _sheetField(
+                                  cantidadCtrl,
+                                  'Cantidad (${liveCuenta.unidadMedida})',
+                                  'Ej: 29.8',
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (_) {
+                                    recalcTotal(setModal);
+                                    recalcPrecio(setModal);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _sheetField(
+                                  precioCtrl,
+                                  'Precio /${liveCuenta.unidadMedida}',
+                                  'Ej: 4.00',
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (_) => recalcTotal(setModal),
+                                ),
+                              ),
+                            ],
+                          )
+                        : _sheetField(
                             precioCtrl,
                             'Precio /${liveCuenta.unidadMedida}',
                             'Ej: 4.00',
                             keyboardType: TextInputType.number,
-                            onChanged: (_) => recalcTotal(setModal),
+                            onChanged: (_) => setModal(() {}),
                           ),
-                        ),
-                      ],
-                    )
-                  else
-                    _sheetField(
-                      precioCtrl,
-                      'Precio /${liveCuenta.unidadMedida}',
-                      'Ej: 4.00',
-                      keyboardType: TextInputType.number,
-                      onChanged: (_) => setModal(() {}),
-                    ),
+                  ),
                   const SizedBox(height: 12),
                   // TOTAL EDITABLE
                   Column(
@@ -1823,16 +1832,23 @@ class CuentaDetalleScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  if (cobrarAhora) ...[
-                    const SizedBox(height: 12),
-                    _sheetField(
-                      abonoCtrl,
-                      'Monto recibido ahora',
-                      '0.00',
-                      keyboardType: TextInputType.number,
-                      onChanged: (_) => setModal(() {}),
-                    ),
-                  ],
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                    child: cobrarAhora
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: _sheetField(
+                              abonoCtrl,
+                              ventaPorMonto ? 'Monto Recibido (Dinero entregado por el cliente)' : 'Monto recibido ahora',
+                              '0.00',
+                              keyboardType: TextInputType.number,
+                              onChanged: (_) => setModal(() {}),
+                              isProminent: ventaPorMonto, // We'll update _sheetField to support this
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
                   // RESUMEN SALDO
                   if (total > 0) ...[
                     const SizedBox(height: 12),
@@ -1953,13 +1969,15 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                   double.tryParse(abonoCtrl.text) ?? 0.0;
                               final kilos = ventaPorMonto
                                   ? null
-                                  : double.tryParse(kilosCtrl.text);
+                                  : double.tryParse(cantidadCtrl.text);
 
                               // Validaciones
                               if (cliente.isEmpty) {
                                 ScaffoldMessenger.of(ctx2).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Ingresa el nombre del cliente'),
+                                    content: Text(
+                                      'Ingresa el nombre del cliente',
+                                    ),
                                   ),
                                 );
                                 return;
@@ -1967,7 +1985,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
                               if (!ventaPorMonto && kilos == null) {
                                 ScaffoldMessenger.of(ctx2).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Ingresa la cantidad de kilos'),
+                                    content: Text(
+                                      'Ingresa la cantidad',
+                                    ),
                                   ),
                                 );
                                 return;
@@ -1975,7 +1995,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
                               if (total == null || total <= 0) {
                                 ScaffoldMessenger.of(ctx2).showSnackBar(
                                   const SnackBar(
-                                    content: Text('El total debe ser mayor a 0'),
+                                    content: Text(
+                                      'El total debe ser mayor a 0',
+                                    ),
                                   ),
                                 );
                                 return;
@@ -1983,7 +2005,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                               if (precio == null || precio <= 0) {
                                 ScaffoldMessenger.of(ctx2).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Ingresa el precio por kilo'),
+                                    content: Text('Ingresa el precio unitario'),
                                   ),
                                 );
                                 return;
@@ -2411,20 +2433,29 @@ class CuentaDetalleScreen extends ConsumerWidget {
     String hint, {
     TextInputType? keyboardType,
     Function(String)? onChanged,
+    bool isProminent = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          style: TextStyle(
+            color: isProminent ? AppColors.cream : AppColors.textSecondary,
+            fontSize: isProminent ? 13 : 12,
+            fontWeight: isProminent ? FontWeight.w600 : FontWeight.normal,
+          ),
         ),
         const SizedBox(height: 6),
         TextField(
           controller: ctrl,
           keyboardType: keyboardType,
           onChanged: onChanged,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          style: TextStyle(
+            color: isProminent ? AppColors.cream : AppColors.textPrimary,
+            fontSize: isProminent ? 16 : 14,
+            fontWeight: isProminent ? FontWeight.w600 : FontWeight.normal,
+          ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(
@@ -2432,22 +2463,30 @@ class CuentaDetalleScreen extends ConsumerWidget {
               fontSize: 14,
             ),
             filled: true,
-            fillColor: AppColors.background,
+            fillColor: isProminent 
+                ? AppColors.cream.withValues(alpha: 0.05) 
+                : AppColors.background,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(
+                color: isProminent ? AppColors.cream : AppColors.border,
+                width: isProminent ? 1.5 : 1.0,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(
+                color: isProminent ? AppColors.cream : AppColors.border,
+                width: isProminent ? 1.5 : 1.0,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.cream),
+              borderSide: const BorderSide(color: AppColors.cream, width: 2.0),
             ),
-            contentPadding: const EdgeInsets.symmetric(
+            contentPadding: EdgeInsets.symmetric(
               horizontal: 14,
-              vertical: 12,
+              vertical: isProminent ? 14 : 12,
             ),
           ),
         ),
