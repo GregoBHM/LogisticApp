@@ -4,6 +4,7 @@ import '../../../core/models/models.dart';
 import '../../../core/network/api_client.dart';
 import '../repository/proyecto_repository.dart';
 import '../repository/cuenta_repository.dart';
+import '../repository/empaque_repository.dart';
 
 final proyectoRepositoryProvider = Provider<ProyectoRepository>(
   (ref) => ProyectoRepository(apiClient),
@@ -87,5 +88,15 @@ final proyectoReporteProvider = FutureProvider.family<ProyectoReporteData, Strin
   (ref, proyectoId) async {
     // No timer for report, we want to fetch it fresh when requested
     return ref.watch(proyectoRepositoryProvider).getReporteDatos(proyectoId);
+  },
+);
+
+final empaqueRepositoryProvider = Provider<EmpaqueRepository>(
+  (ref) => EmpaqueRepository(apiClient),
+);
+
+final empaquesProvider = FutureProvider.family<List<EmpaqueModel>, String>(
+  (ref, proyectoId) async {
+    return ref.watch(empaqueRepositoryProvider).getEmpaques(proyectoId);
   },
 );

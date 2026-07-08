@@ -6,11 +6,12 @@ from sqlalchemy.orm import selectinload
 from typing import List
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.models.domain import Perfil, Proyecto, ProyectoMiembro, TransaccionGeneral, Cuenta, Venta, Gasto, Abono
+from app.models.domain import Perfil, Proyecto, ProyectoMiembro, TransaccionGeneral, Cuenta, Venta, Gasto, Abono, Empaque
 from app.schemas.domain import (
     ProyectoCreate, ProyectoResponse, ProyectoUpdate, ProyectoInvite, ProyectoMiembroUpdate,
     TransaccionGeneralCreate, TransaccionGeneralResponse, TransaccionGeneralUpdate,
-    ProyectoReporteResponse, VentaReporteItem, GastoReporteItem, AbonoReporteItem
+    ProyectoReporteResponse, VentaReporteItem, GastoReporteItem, AbonoReporteItem,
+    EmpaqueCreate, EmpaqueResponse
 )
 
 router = APIRouter()
@@ -443,3 +444,79 @@ async def get_proyecto_reporte_datos(
         gastos=gastos_list,
         abonos=abonos_list
     )
+
+# ─── EMPAQUES ───────────────────────────────────────────────────────────────────
+
+@router.get("/{proyecto_id}/empaques", response_model=List[EmpaqueResponse])
+async def get_empaques(
+    proyecto_id: str,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    # Verify membership
+    miembro_stmt = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == proyecto_id,
+        ProyectoMiembro.usuario_id == current_user.id
+    )
+    miembro = (await db.execute(miembro_stmt)).scalars().first()
+    if not miembro:
+        raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
+
+    result = await db.execute(
+        select(Empaque).filter(Empaque.proyecto_id == proyecto_id).order_by(Empaque.created_at)
+    )
+    return result.scalars().all()
+
+
+@router.post("/{proyecto_id}/empaques", response_model=EmpaqueResponse, status_code=201)
+async def create_empaque(
+    proyecto_id: str,
+    empaque_in: EmpaqueCreate,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    # Verify membership and owner role
+    miembro_stmt = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == proyecto_id,
+        ProyectoMiembro.usuario_id == current_user.id
+    )
+    miembro = (await db.execute(miembro_stmt)).scalars().first()
+    if not miembro or miembro.rol != "dueno":
+        raise HTTPException(status_code=403, detail="Solo el dueño puede configurar empaques")
+
+    empaque = Empaque(
+        proyecto_id=proyecto_id,
+        nombre=empaque_in.nombre,
+        unidad_medida=empaque_in.unidad_medida,
+        cantidad_por_unidad=empaque_in.cantidad_por_unidad,
+    )
+    db.add(empaque)
+    await db.commit()
+    await db.refresh(empaque)
+    return empaque
+
+
+@router.delete("/{proyecto_id}/empaques/{empaque_id}", status_code=204)
+async def delete_empaque(
+    proyecto_id: str,
+    empaque_id: str,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    miembro_stmt = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == proyecto_id,
+        ProyectoMiembro.usuario_id == current_user.id
+    )
+    miembro = (await db.execute(miembro_stmt)).scalars().first()
+    if not miembro or miembro.rol != "dueno":
+        raise HTTPException(status_code=403, detail="Solo el dueño puede eliminar empaques")
+
+    result = await db.execute(
+        select(Empaque).filter(Empaque.id == empaque_id, Empaque.proyecto_id == proyecto_id)
+    )
+    empaque = result.scalars().first()
+    if not empaque:
+        raise HTTPException(status_code=404, detail="Empaque no encontrado")
+
+    await db.delete(empaque)
+    await db.commit()

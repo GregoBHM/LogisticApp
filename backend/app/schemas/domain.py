@@ -43,6 +43,22 @@ class ProyectoInvite(BaseModel):
 class ProyectoMiembroUpdate(BaseModel):
     rol: str
 
+class EmpaqueCreate(BaseModel):
+    nombre: str
+    unidad_medida: str
+    cantidad_por_unidad: float
+
+class EmpaqueResponse(BaseModel):
+    id: str
+    proyecto_id: str
+    nombre: str
+    unidad_medida: str
+    cantidad_por_unidad: float
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class ProyectoResponse(BaseModel):
     id: str
     nombre: str

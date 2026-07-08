@@ -81,6 +81,39 @@ class ProyectoModel {
       };
 }
 
+class EmpaqueModel {
+  final String id;
+  final String proyectoId;
+  final String nombre;
+  final String unidadMedida;
+  final double cantidadPorUnidad;
+  final DateTime createdAt;
+
+  const EmpaqueModel({
+    required this.id,
+    required this.proyectoId,
+    required this.nombre,
+    required this.unidadMedida,
+    required this.cantidadPorUnidad,
+    required this.createdAt,
+  });
+
+  factory EmpaqueModel.fromJson(Map<String, dynamic> json) => EmpaqueModel(
+        id: json['id'] as String,
+        proyectoId: json['proyecto_id'] as String,
+        nombre: json['nombre'] as String,
+        unidadMedida: json['unidad_medida'] as String,
+        cantidadPorUnidad: (json['cantidad_por_unidad'] as num).toDouble(),
+        createdAt: DateTime.parse(json['created_at'] as String),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'nombre': nombre,
+        'unidad_medida': unidadMedida,
+        'cantidad_por_unidad': cantidadPorUnidad,
+      };
+}
+
 class CuentaModel {
   final String id;
   final String proyectoId;

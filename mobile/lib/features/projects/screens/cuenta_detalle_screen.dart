@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
@@ -800,42 +801,45 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(
+                     Expanded(
                       child: _sheetField(
                         cantidadCtrl,
                         'Cantidad',
                         'Ej: 29.8',
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                         onChanged: (_) {
                           recalcTotal(setModal);
                           recalcPrecio(setModal);
                         },
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _sheetField(
-                        precioCtrl,
-                        'Precio unitario',
-                        'Ej: 3.50',
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        onChanged: (_) => recalcTotal(setModal),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _sheetField(
-                  totalCtrl,
-                  'Total',
-                  'Ej: 104.30',
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  onChanged: (_) => recalcPrecio(setModal),
-                ),
+                     const SizedBox(width: 12),
+                     Expanded(
+                       child: _sheetField(
+                         precioCtrl,
+                         'Precio unitario',
+                         'Ej: 3.50',
+                         keyboardType: const TextInputType.numberWithOptions(
+                           decimal: true,
+                         ),
+                         inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                         onChanged: (_) => recalcTotal(setModal),
+                       ),
+                     ),
+                   ],
+                 ),
+                 const SizedBox(height: 12),
+                 _sheetField(
+                   totalCtrl,
+                   'Total',
+                   'Ej: 104.30',
+                   keyboardType: const TextInputType.numberWithOptions(
+                     decimal: true,
+                   ),
+                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                   onChanged: (_) => recalcPrecio(setModal),
+                 ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -1203,6 +1207,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
               ),
               const SizedBox(height: 12),
               _sheetField(
@@ -1328,6 +1333,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -1653,7 +1659,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                   cantidadCtrl,
                                   'Cantidad (${liveCuenta.unidadMedida})',
                                   'Ej: 29.8',
-                                  keyboardType: TextInputType.number,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                                   onChanged: (_) {
                                     recalcTotal(setModal);
                                     recalcPrecio(setModal);
@@ -1666,7 +1673,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                   precioCtrl,
                                   'Precio /${liveCuenta.unidadMedida}',
                                   'Ej: 4.00',
-                                  keyboardType: TextInputType.number,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                                   onChanged: (_) => recalcTotal(setModal),
                                 ),
                               ),
@@ -1676,7 +1684,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
                             precioCtrl,
                             'Precio /${liveCuenta.unidadMedida}',
                             'Ej: 4.00',
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                             onChanged: (_) => setModal(() {}),
                           ),
                   ),
@@ -1718,7 +1727,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
                       const SizedBox(height: 6),
                       TextField(
                         controller: totalCtrl,
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                         onChanged: (_) => recalcPrecio(setModal),
                         style: const TextStyle(
                           color: AppColors.textPrimary,
@@ -1842,9 +1852,10 @@ class CuentaDetalleScreen extends ConsumerWidget {
                               abonoCtrl,
                               ventaPorMonto ? 'Monto Recibido (Dinero entregado por el cliente)' : 'Monto recibido ahora',
                               '0.00',
-                              keyboardType: TextInputType.number,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                               onChanged: (_) => setModal(() {}),
-                              isProminent: ventaPorMonto, // We'll update _sheetField to support this
+                              isProminent: ventaPorMonto,
                             ),
                           )
                         : const SizedBox.shrink(),
@@ -2151,7 +2162,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 montoCtrl,
                 'Cantidad a cobrar',
                 'Ej: ${venta.saldoPendiente.toStringAsFixed(2)}',
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
               ),
               const SizedBox(height: 12),
               _sheetField(
@@ -2297,7 +2309,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 montoCtrl,
                 'Monto',
                 'Ej: 150.00',
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -2434,6 +2447,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
     TextInputType? keyboardType,
     Function(String)? onChanged,
     bool isProminent = false,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2450,6 +2464,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
         TextField(
           controller: ctrl,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           onChanged: onChanged,
           style: TextStyle(
             color: isProminent ? AppColors.cream : AppColors.textPrimary,

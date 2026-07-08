@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
@@ -171,6 +172,95 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 24),
+            // ─── MIS EMPAQUES ────────────────────────────────────────────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Mis Empaques',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => _showNuevoEmpaqueSheet(context, ref),
+                  child: const Text(
+                    '+ Añadir',
+                    style: TextStyle(
+                      color: AppColors.cream,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ref.watch(empaquesProvider(proyecto.id)).when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => const SizedBox.shrink(),
+              data: (empaques) {
+                if (empaques.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border, style: BorderStyle.solid),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Sin empaques configurados.\nToca "+ Añadir" para crear el primero.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.6),
+                      ),
+                    ),
+                  );
+                }
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: empaques.map((e) {
+                    return GestureDetector(
+                      onLongPress: () => _confirmDeleteEmpaque(context, ref, e),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.cream.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.cream.withValues(alpha: 0.4)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              e.nombre,
+                              style: const TextStyle(
+                                color: AppColors.cream,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              '${e.cantidadPorUnidad.toStringAsFixed(1)} ${e.unidadMedida}',
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
             const SizedBox(height: 24),
             const Text(
@@ -1929,6 +2019,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
     String hint, {
     TextInputType? keyboardType,
     Function(String)? onChanged,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1941,6 +2032,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
         TextField(
           controller: ctrl,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           onChanged: onChanged,
           style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
           decoration: InputDecoration(
@@ -1970,6 +2062,275 @@ class ProyectoDetalleScreen extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  // ─── NUEVO EMPAQUE ──────────────────────────────────────────────────────────
+  void _showNuevoEmpaqueSheet(BuildContext context, WidgetRef ref) {
+    final nombreCtrl = TextEditingController();
+    final cantidadCtrl = TextEditingController();
+    final medidaCtrl = TextEditingController();
+    String? medidaSeleccionada;
+    bool loading = false;
+    const List<String> medidasRapidas = ['kg', 'lb', 'und', 'lt', 'pz', 'm'];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx2, setModal) {
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              24, 20, 24,
+              MediaQuery.of(ctx2).viewInsets.bottom + 32,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36, height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.borderLight,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Nuevo Empaque',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Ej: "Caja Mediana", "Bugui", "Saco de 50kg"',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  ),
+                  const SizedBox(height: 20),
+                  // NOMBRE
+                  _sheetField(nombreCtrl, 'Nombre del empaque', 'Ej: Bugui, Caja, Saco...'),
+                  const SizedBox(height: 16),
+                  // MEDIDA — botones rápidos + campo libre
+                  const Text(
+                    'Unidad de medida',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ...medidasRapidas.map((m) => GestureDetector(
+                        onTap: () => setModal(() {
+                          medidaSeleccionada = m;
+                          medidaCtrl.clear();
+                        }),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                          decoration: BoxDecoration(
+                            color: medidaSeleccionada == m
+                                ? AppColors.cream
+                                : AppColors.background,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: medidaSeleccionada == m
+                                  ? AppColors.cream
+                                  : AppColors.border,
+                            ),
+                          ),
+                          child: Text(
+                            m,
+                            style: TextStyle(
+                              color: medidaSeleccionada == m
+                                  ? AppColors.background
+                                  : AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      )),
+                      // Botón "Otra"
+                      GestureDetector(
+                        onTap: () => setModal(() => medidaSeleccionada = null),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                          decoration: BoxDecoration(
+                            color: medidaSeleccionada == null && medidaCtrl.text.isEmpty
+                                ? AppColors.background
+                                : medidaSeleccionada == null
+                                    ? AppColors.cream.withValues(alpha: 0.15)
+                                    : AppColors.background,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: medidaSeleccionada == null && medidaCtrl.text.isNotEmpty
+                                  ? AppColors.cream
+                                  : AppColors.border,
+                            ),
+                          ),
+                          child: Text(
+                            'Otra...',
+                            style: TextStyle(
+                              color: medidaSeleccionada == null && medidaCtrl.text.isNotEmpty
+                                  ? AppColors.cream
+                                  : AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Campo libre para medida personalizada
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    child: medidaSeleccionada == null
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: TextField(
+                              controller: medidaCtrl,
+                              onChanged: (_) => setModal(() {}),
+                              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                              decoration: InputDecoration(
+                                hintText: 'Escribe tu unidad (Ej: baldes, atados)',
+                                hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                                filled: true,
+                                fillColor: AppColors.background,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.cream)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 16),
+                  // CANTIDAD POR UNIDAD
+                  _sheetField(
+                    cantidadCtrl,
+                    'Cantidad por unidad (¿cuánto contiene?)',
+                    'Ej: 150 (si un Bugui tiene 150 kg)',
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: loading ? null : () async {
+                        final nombre = nombreCtrl.text.trim();
+                        final unidad = medidaSeleccionada ?? medidaCtrl.text.trim();
+                        final cantidad = double.tryParse(cantidadCtrl.text);
+
+                        if (nombre.isEmpty) {
+                          ScaffoldMessenger.of(ctx2).showSnackBar(
+                            const SnackBar(content: Text('Ingresa el nombre del empaque')),
+                          );
+                          return;
+                        }
+                        if (unidad.isEmpty) {
+                          ScaffoldMessenger.of(ctx2).showSnackBar(
+                            const SnackBar(content: Text('Selecciona o escribe la unidad de medida')),
+                          );
+                          return;
+                        }
+                        if (cantidad == null || cantidad <= 0) {
+                          ScaffoldMessenger.of(ctx2).showSnackBar(
+                            const SnackBar(content: Text('Ingresa una cantidad válida mayor a 0')),
+                          );
+                          return;
+                        }
+
+                        setModal(() => loading = true);
+                        try {
+                          await ref.read(empaqueRepositoryProvider).crearEmpaque(
+                            proyectoId: proyecto.id,
+                            nombre: nombre,
+                            unidadMedida: unidad,
+                            cantidadPorUnidad: cantidad,
+                          );
+                          ref.invalidate(empaquesProvider(proyecto.id));
+                          if (ctx2.mounted) Navigator.pop(ctx2);
+                        } catch (e) {
+                          setModal(() => loading = false);
+                          if (ctx2.mounted) {
+                            ScaffoldMessenger.of(ctx2).showSnackBar(
+                              SnackBar(content: Text(ErrorHandler.parse(e))),
+                            );
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.cream,
+                        foregroundColor: AppColors.background,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: loading
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.background, strokeWidth: 2))
+                          : const Text('Guardar Empaque', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _confirmDeleteEmpaque(BuildContext context, WidgetRef ref, EmpaqueModel empaque) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('Eliminar Empaque', style: TextStyle(color: AppColors.textPrimary)),
+        content: Text(
+          '¿Eliminar "${empaque.nombre}"? Esto no afecta las cuentas ya creadas.',
+          style: const TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ref.read(empaqueRepositoryProvider).eliminarEmpaque(
+                  proyectoId: proyecto.id,
+                  empaqueId: empaque.id,
+                );
+                ref.invalidate(empaquesProvider(proyecto.id));
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(ErrorHandler.parse(e))),
+                  );
+                }
+              }
+            },
+            child: const Text('Eliminar', style: TextStyle(color: AppColors.negative)),
+          ),
+        ],
+      ),
     );
   }
 }

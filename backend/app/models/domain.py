@@ -40,6 +40,19 @@ class Proyecto(Base):
     miembros = relationship("ProyectoMiembro", back_populates="proyecto", cascade="all, delete-orphan")
     cuentas = relationship("Cuenta", back_populates="proyecto", cascade="all, delete-orphan")
     transacciones = relationship("TransaccionGeneral", back_populates="proyecto", cascade="all, delete-orphan")
+    empaques = relationship("Empaque", back_populates="proyecto", cascade="all, delete-orphan")
+
+class Empaque(Base):
+    __tablename__ = "empaques"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    proyecto_id = Column(UUID(as_uuid=False), ForeignKey("proyectos.id", ondelete="CASCADE"), nullable=False)
+    nombre = Column(String(100), nullable=False)
+    unidad_medida = Column(String(50), nullable=False)
+    cantidad_por_unidad = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    proyecto = relationship("Proyecto", back_populates="empaques")
 
 class ProyectoMiembro(Base):
     __tablename__ = "proyecto_miembros"

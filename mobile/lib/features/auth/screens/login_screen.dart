@@ -77,7 +77,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Image.asset('assets/icon.png', width: 64, height: 64),
                   ),
                   const SizedBox(height: 16),
-                  const Text('HyL Logistic', style: TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.5)),
+                  const Text('GyL Logistic', style: TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.5)),
                   const SizedBox(height: 4),
                   Text(
                     _isRegisterMode ? 'Crea tu cuenta' : 'Gestión de inventario y ventas',
