@@ -254,6 +254,18 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                                 fontSize: 11,
                               ),
                             ),
+                            if (e.descripcion != null && e.descripcion!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  e.descripcion!,
+                                  style: const TextStyle(
+                                    color: AppColors.textMuted,
+                                    fontSize: 10,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -1143,7 +1155,8 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     cantPorUnidadCtrl,
                     'Cantidad por empaque ($unidadMedida)',
                     'Ej: 20',
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                   ),
                 ],
                 const SizedBox(height: 24),
@@ -1359,7 +1372,8 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                         cantidadCtrl,
                         'Cantidad',
                         'Ej: 200',
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                         onChanged: (_) {
                           setModal(() {
                             final cant = double.tryParse(cantidadCtrl.text) ?? 0;
@@ -1378,7 +1392,8 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                         cantPorUnidadCtrl,
                         'Cant. por empaque ($unidadMedida)',
                         'Ej: 50',
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                         onChanged: (_) {
                           setModal(() {
                             final cant = double.tryParse(cantidadCtrl.text) ?? 0;
@@ -1409,7 +1424,8 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   inversionCtrl,
                   'Inversión Total',
                   'Ej: 5000',
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                   onChanged: (_) {
                     setModal(() {
                       final cant = double.tryParse(cantidadCtrl.text) ?? 0;
@@ -1435,9 +1451,9 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     const SizedBox(height: 6),
                     TextField(
                       controller: precioCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                      onChanged: (_) => setModal(() {}),
                       style: const TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 14,
@@ -1560,6 +1576,19 @@ class ProyectoDetalleScreen extends ConsumerWidget {
     String unidadMedida = proyecto.unidadMedidaDefault ?? 'und';
     DateTime fechaApertura = DateTime.now();
     bool loading = false;
+    EmpaqueModel? empaqueSeleccionado;
+
+    void recalcPrecio(void Function(void Function()) setModal) {
+      setModal(() {
+        final cant = double.tryParse(cantidadCtrl.text) ?? 0;
+        final cpu = double.tryParse(cantPorUnidadCtrl.text) ?? 0;
+        final inv = double.tryParse(inversionCtrl.text) ?? 0;
+        final total = cant * cpu;
+        if (total > 0 && inv > 0) {
+          precioCtrl.text = (inv / total).toStringAsFixed(2);
+        }
+      });
+    }
 
     showModalBottomSheet(
       context: context,
@@ -1569,450 +1598,416 @@ class ProyectoDetalleScreen extends ConsumerWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx2, setModal) => Padding(
-          padding: EdgeInsets.fromLTRB(
-            24,
-            20,
-            24,
-            MediaQuery.of(ctx2).viewInsets.bottom + 32,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.borderLight,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Nueva Cuenta',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                if (proyecto.productoDefault != null ||
-                    proyecto.tipoUnidadDefault != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
+        builder: (ctx2, setModal) {
+          final empaquesAsync = ref.watch(empaquesProvider(proyecto.id));
+
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              24, 20, 24,
+              MediaQuery.of(ctx2).viewInsets.bottom + 32,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
+                      width: 36, height: 4,
                       decoration: BoxDecoration(
-                        color: AppColors.cream.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppColors.cream.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.auto_fix_high_rounded,
-                            color: AppColors.cream.withValues(alpha: 0.6),
-                            size: 14,
-                          ),
-                          const SizedBox(width: 6),
-                          const Expanded(
-                            child: Text(
-                              'Campos pre-llenados desde la plantilla del proyecto',
-                              style: TextStyle(
-                                color: AppColors.textMuted,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ),
-                        ],
+                        color: AppColors.borderLight,
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ),
-                _sheetField(
-                  nombreCtrl,
-                  'Nombre de la cuenta',
-                  'Ej: Camión del Lunes',
-                ),
-                const SizedBox(height: 12),
-                _sheetField(
-                  productoCtrl,
-                  'Producto o Servicio',
-                  productoCtrl.text.isNotEmpty
-                      ? productoCtrl.text
-                      : 'Ej: Mango, Ropa, Servicio',
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _sheetField(
-                        tipoUnidadCtrl,
-                        'Tipo de empaque/lote',
-                        'Ej: Caja, Paquete, Lote',
-                      ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Nueva Cuenta',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
+                  ),
+                  const SizedBox(height: 20),
+                  _sheetField(nombreCtrl, 'Nombre de la cuenta', 'Ej: Camión del Lunes'),
+                  const SizedBox(height: 12),
+                  _sheetField(
+                    productoCtrl,
+                    'Producto o Servicio',
+                    productoCtrl.text.isNotEmpty ? productoCtrl.text : 'Ej: Mango, Ropa, Servicio',
+                  ),
+                  const SizedBox(height: 16),
+                  // ─── SELECTOR INTELIGENTE DE EMPAQUE ──────────────────────
+                  empaquesAsync.when(
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                    data: (empaques) {
+                      if (empaques.isEmpty) return const SizedBox.shrink();
+                      return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Unidad de medida',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Wrap(
-                            spacing: 6,
-                            children: ['und', 'kg', 'lt', 'pz', 'm'].map((u) {
-                              final sel = unidadMedida == u;
-                              return GestureDetector(
-                                onTap: () => setModal(() => unidadMedida = u),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
+                          Row(
+                            children: [
+                              const Text(
+                                'Seleccionar empaque',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.cream.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'Auto-rellena',
+                                  style: TextStyle(
+                                    color: AppColors.cream,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: sel ? AppColors.cream : AppColors.background,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: sel ? AppColors.cream : AppColors.border,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              ...empaques.map((emp) {
+                                final sel = empaqueSeleccionado?.id == emp.id;
+                                return GestureDetector(
+                                  onTap: () {
+                                    setModal(() {
+                                      if (sel) {
+                                        empaqueSeleccionado = null;
+                                        tipoUnidadCtrl.text = proyecto.tipoUnidadDefault ?? '';
+                                        cantPorUnidadCtrl.text = proyecto.cantidadPorUnidadDefault != null
+                                            ? proyecto.cantidadPorUnidadDefault!.toStringAsFixed(
+                                                proyecto.cantidadPorUnidadDefault! == proyecto.cantidadPorUnidadDefault!.roundToDouble() ? 0 : 1)
+                                            : '';
+                                        unidadMedida = proyecto.unidadMedidaDefault ?? 'und';
+                                      } else {
+                                        empaqueSeleccionado = emp;
+                                        tipoUnidadCtrl.text = emp.nombre;
+                                        cantPorUnidadCtrl.text = emp.cantidadPorUnidad.toStringAsFixed(
+                                          emp.cantidadPorUnidad == emp.cantidadPorUnidad.roundToDouble() ? 0 : 1,
+                                        );
+                                        unidadMedida = emp.unidadMedida;
+                                      }
+                                    });
+                                    recalcPrecio(setModal);
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 150),
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                                    decoration: BoxDecoration(
+                                      color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (sel) ...[
+                                          const Icon(Icons.check_circle, size: 16, color: AppColors.background),
+                                          const SizedBox(width: 4),
+                                        ],
+                                        Text(
+                                          '${emp.nombre} (${emp.cantidadPorUnidad.toStringAsFixed(0)} ${emp.unidadMedida})',
+                                          style: TextStyle(
+                                            color: sel ? AppColors.background : AppColors.cream,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  child: Text(
-                                    u,
+                                );
+                              }),
+                              GestureDetector(
+                                onTap: () => setModal(() {
+                                  empaqueSeleccionado = null;
+                                  tipoUnidadCtrl.clear();
+                                  cantPorUnidadCtrl.clear();
+                                }),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: const Text(
+                                    'Manual...',
                                     style: TextStyle(
-                                      color: sel ? AppColors.background : AppColors.textSecondary,
+                                      color: AppColors.textSecondary,
                                       fontWeight: FontWeight.w500,
                                       fontSize: 12,
                                     ),
                                   ),
                                 ),
-                              );
-                            }).toList(),
+                              ),
+                            ],
+                          ),
+                          if (empaqueSeleccionado?.descripcion != null &&
+                              empaqueSeleccionado!.descripcion!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.cream.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.info_outline, size: 14, color: AppColors.cream),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        empaqueSeleccionado!.descripcion!,
+                                        style: const TextStyle(
+                                          color: AppColors.textMuted,
+                                          fontSize: 11,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 12),
+                        ],
+                      );
+                    },
+                  ),
+                  // ─── CAMPOS DE EMPAQUE ────────────────────────────────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _sheetField(tipoUnidadCtrl, 'Tipo de empaque/lote', 'Ej: Caja, Paquete, Lote'),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Unidad de medida', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              children: ['und', 'kg', 'lt', 'pz', 'm'].map((u) {
+                                final sel = unidadMedida == u;
+                                return GestureDetector(
+                                  onTap: () => setModal(() => unidadMedida = u),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: sel ? AppColors.cream : AppColors.background,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: sel ? AppColors.cream : AppColors.border),
+                                    ),
+                                    child: Text(u, style: TextStyle(color: sel ? AppColors.background : AppColors.textSecondary, fontWeight: FontWeight.w500, fontSize: 12)),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _sheetField(
+                          cantidadCtrl,
+                          empaqueSeleccionado != null ? 'Cantidad de ${empaqueSeleccionado!.nombre}s' : 'Cantidad',
+                          empaqueSeleccionado != null ? 'Ej: 10' : 'Ej: 200',
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                          onChanged: (_) => recalcPrecio(setModal),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _sheetField(
+                          cantPorUnidadCtrl,
+                          'Cant. por empaque ($unidadMedida)',
+                          'Ej: 50',
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                          onChanged: (_) => recalcPrecio(setModal),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (cantidadCtrl.text.isNotEmpty && cantPorUnidadCtrl.text.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.cream.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.inventory_2_outlined, size: 14, color: AppColors.cream),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Stock total: ${((double.tryParse(cantidadCtrl.text) ?? 0) * (double.tryParse(cantPorUnidadCtrl.text) ?? 0)).toStringAsFixed(0)} $unidadMedida',
+                            style: const TextStyle(color: AppColors.cream, fontSize: 13, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _sheetField(
-                        cantidadCtrl,
-                        'Cantidad',
-                        'Ej: 200',
-                        keyboardType: TextInputType.number,
-                        onChanged: (_) {
-                          setModal(() {
-                            final cant = double.tryParse(cantidadCtrl.text) ?? 0;
-                            final cpu = double.tryParse(cantPorUnidadCtrl.text) ?? 0;
-                            final inv = double.tryParse(inversionCtrl.text) ?? 0;
-                            final total = cant * cpu;
-                            if (total > 0 && inv > 0)
-                              precioCtrl.text = (inv / total).toStringAsFixed(2);
-                          });
-                        },
+                  const SizedBox(height: 12),
+                  _sheetField(
+                    inversionCtrl, 'Inversión Total', 'Ej: 5000',
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                    onChanged: (_) => recalcPrecio(setModal),
+                  ),
+                  const SizedBox(height: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text('Precio de Venta /$unidadMedida', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: AppColors.cream.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
+                            child: const Text('Sugerido', style: TextStyle(color: AppColors.cream, fontSize: 10, fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: precioCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                        onChanged: (_) => setModal(() {}),
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: 'Se calcula automáticamente',
+                          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                          filled: true,
+                          fillColor: AppColors.background,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.cream)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        ),
+                      ),
+                      if (precioCtrl.text.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        const Text('A este precio recuperas exactamente tu inversión.', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: ctx2, initialDate: fechaApertura, firstDate: DateTime(2020), lastDate: DateTime.now(),
+                        builder: (c, child) => Theme(data: ThemeData.dark(), child: child!),
+                      );
+                      if (picked != null) setModal(() => fechaApertura = picked);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.border)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Fecha de apertura', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                          Row(children: [
+                            Text(DateFormat('dd MMM yyyy', 'es').format(fechaApertura), style: const TextStyle(color: AppColors.cream, fontWeight: FontWeight.w500, fontSize: 13)),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.cream),
+                          ]),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _sheetField(
-                        cantPorUnidadCtrl,
-                        'Cant. por empaque ($unidadMedida)',
-                        'Ej: 50',
-                        keyboardType: TextInputType.number,
-                        onChanged: (_) {
-                          setModal(() {
-                            final cant = double.tryParse(cantidadCtrl.text) ?? 0;
-                            final cpu = double.tryParse(cantPorUnidadCtrl.text) ?? 0;
-                            final inv = double.tryParse(inversionCtrl.text) ?? 0;
-                            final total = cant * cpu;
-                            if (total > 0 && inv > 0)
-                              precioCtrl.text = (inv / total).toStringAsFixed(2);
-                          });
-                        },
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: loading ? null : () async {
+                        final nombre = nombreCtrl.text.trim();
+                        final producto = productoCtrl.text.trim();
+                        final cantidad = double.tryParse(cantidadCtrl.text);
+                        final cpu = double.tryParse(cantPorUnidadCtrl.text);
+                        final inversion = double.tryParse(inversionCtrl.text);
+                        final precio = double.tryParse(precioCtrl.text);
+
+                        if (nombre.isEmpty || producto.isEmpty || cantidad == null || cpu == null || inversion == null || precio == null) {
+                          ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('Completa todos los campos')));
+                          return;
+                        }
+                        if (inversion < 0 || precio <= 0) {
+                          ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('La inversión no puede ser negativa y el precio debe ser mayor a 0')));
+                          return;
+                        }
+
+                        setModal(() => loading = true);
+                        try {
+                          await ref.read(cuentaRepositoryProvider).crearCuenta(
+                            proyectoId: proyecto.id,
+                            nombre: nombre,
+                            producto: producto,
+                            tipoUnidad: tipoUnidadCtrl.text.isEmpty ? 'Unidad' : tipoUnidadCtrl.text,
+                            unidadMedida: unidadMedida,
+                            cantidadUnidades: cantidad,
+                            cantidadPorUnidad: cpu,
+                            inversionTotal: inversion,
+                            precioUnitario: precio,
+                            creadoPor: '',
+                            fechaApertura: fechaApertura,
+                          );
+                          ref.invalidate(cuentasProvider(proyecto.id));
+                          if (ctx2.mounted) Navigator.pop(ctx2);
+                        } catch (e) {
+                          setModal(() => loading = false);
+                          if (ctx2.mounted) {
+                            ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.cream,
+                        foregroundColor: AppColors.background,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                    ),
-                  ],
-                ),
-                if (cantidadCtrl.text.isNotEmpty && cantPorUnidadCtrl.text.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    'Stock: ${((double.tryParse(cantidadCtrl.text) ?? 0) * (double.tryParse(cantPorUnidadCtrl.text) ?? 0)).toStringAsFixed(0)} $unidadMedida',
-                    style: const TextStyle(
-                      color: AppColors.cream,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      child: loading
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Crear Cuenta', style: TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
-                const SizedBox(height: 12),
-                _sheetField(
-                  inversionCtrl,
-                  'Inversión Total',
-                  'Ej: 5000',
-                  keyboardType: TextInputType.number,
-                  onChanged: (_) {
-                    setModal(() {
-                      final cant = double.tryParse(cantidadCtrl.text) ?? 0;
-                      final cpu = double.tryParse(cantPorUnidadCtrl.text) ?? 0;
-                      final inv = double.tryParse(inversionCtrl.text) ?? 0;
-                      final total = cant * cpu;
-                      if (total > 0 && inv > 0)
-                        precioCtrl.text = (inv / total).toStringAsFixed(2);
-                    });
-                  },
-                ),
-                const SizedBox(height: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          'Precio de Venta /$unidadMedida',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.cream.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'Sugerido',
-                            style: TextStyle(
-                              color: AppColors.cream,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: precioCtrl,
-                      keyboardType: TextInputType.number,
-                      onChanged: (_) => setModal(() {}),
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Se calcula automáticamente',
-                        hintStyle: const TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 13,
-                        ),
-                        filled: true,
-                        fillColor: AppColors.background,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: AppColors.border),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: AppColors.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: AppColors.cream),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                    if (precioCtrl.text.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      const Text(
-                        'A este precio recuperas exactamente tu inversión.',
-                        style: TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: ctx2,
-                      initialDate: fechaApertura,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now(),
-                      builder: (c, child) =>
-                          Theme(data: ThemeData.dark(), child: child!),
-                    );
-                    if (picked != null) setModal(() => fechaApertura = picked);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Fecha de apertura',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 13,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              DateFormat(
-                                'dd MMM yyyy',
-                                'es',
-                              ).format(fechaApertura),
-                              style: const TextStyle(
-                                color: AppColors.cream,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            const Icon(
-                              Icons.calendar_today_outlined,
-                              size: 14,
-                              color: AppColors.cream,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: loading
-                        ? null
-                        : () async {
-                            final nombre = nombreCtrl.text.trim();
-                            final producto = productoCtrl.text.trim();
-                            final cantidad = double.tryParse(cantidadCtrl.text);
-                            final cpu = double.tryParse(cantPorUnidadCtrl.text);
-                            final inversion = double.tryParse(inversionCtrl.text);
-                            final precio = double.tryParse(precioCtrl.text);
-
-                            if (nombre.isEmpty ||
-                                producto.isEmpty ||
-                                cantidad == null ||
-                                cpu == null ||
-                                inversion == null ||
-                                precio == null) {
-                              ScaffoldMessenger.of(ctx2).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Completa todos los campos'),
-                                ),
-                              );
-                              return;
-                            }
-                            if (inversion < 0 || precio <= 0) {
-                              ScaffoldMessenger.of(ctx2).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'La inversión no puede ser negativa y el precio debe ser mayor a 0',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-
-                            setModal(() => loading = true);
-                            try {
-                              await ref
-                                  .read(cuentaRepositoryProvider)
-                                  .crearCuenta(
-                                    proyectoId: proyecto.id,
-                                    nombre: nombre,
-                                    producto: producto,
-                                    tipoUnidad: tipoUnidadCtrl.text.isEmpty ? 'Unidad' : tipoUnidadCtrl.text,
-                                    unidadMedida: unidadMedida,
-                                    cantidadUnidades: cantidad,
-                                    cantidadPorUnidad: cpu,
-                                    inversionTotal: inversion,
-                                    precioUnitario: precio,
-                                    creadoPor: '',
-                                    fechaApertura: fechaApertura,
-                                  );
-                              ref.invalidate(cuentasProvider(proyecto.id));
-                              if (ctx2.mounted) Navigator.pop(ctx2);
-                            } catch (e) {
-                              setModal(() => loading = false);
-                              if (ctx2.mounted)
-                                ScaffoldMessenger.of(ctx2).showSnackBar(
-                                  SnackBar(
-                                    content: Text(ErrorHandler.parse(e)),
-                                  ),
-                                );
-                            }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.cream,
-                      foregroundColor: AppColors.background,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: loading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text(
-                            'Crear Cuenta',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
-
   Widget _sheetField(
     TextEditingController ctrl,
     String label,
@@ -2070,6 +2065,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
     final nombreCtrl = TextEditingController();
     final cantidadCtrl = TextEditingController();
     final medidaCtrl = TextEditingController();
+    final descripcionCtrl = TextEditingController();
     String? medidaSeleccionada;
     bool loading = false;
     const List<String> medidasRapidas = ['kg', 'lb', 'und', 'lt', 'pz', 'm'];
@@ -2228,6 +2224,13 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                   ),
+                  const SizedBox(height: 16),
+                  // DESCRIPCIÓN (opcional)
+                  _sheetField(
+                    descripcionCtrl,
+                    'Descripción (opcional)',
+                    'Ej: Tiene 8 bandejas, para papaya de exportación',
+                  ),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -2263,6 +2266,9 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                             nombre: nombre,
                             unidadMedida: unidad,
                             cantidadPorUnidad: cantidad,
+                            descripcion: descripcionCtrl.text.trim().isEmpty
+                                ? null
+                                : descripcionCtrl.text.trim(),
                           );
                           ref.invalidate(empaquesProvider(proyecto.id));
                           if (ctx2.mounted) Navigator.pop(ctx2);

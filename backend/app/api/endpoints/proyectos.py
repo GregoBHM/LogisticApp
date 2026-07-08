@@ -489,6 +489,7 @@ async def create_empaque(
         nombre=empaque_in.nombre,
         unidad_medida=empaque_in.unidad_medida,
         cantidad_por_unidad=empaque_in.cantidad_por_unidad,
+        descripcion=empaque_in.descripcion,
     )
     db.add(empaque)
     await db.commit()

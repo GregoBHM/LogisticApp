@@ -7,8 +7,12 @@ CREATE TABLE IF NOT EXISTS empaques (
     nombre VARCHAR(100) NOT NULL,
     unidad_medida VARCHAR(50) NOT NULL,
     cantidad_por_unidad FLOAT NOT NULL,
+    descripcion TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- Índice para búsquedas rápidas por proyecto
 CREATE INDEX IF NOT EXISTS idx_empaques_proyecto_id ON empaques(proyecto_id);
+
+-- Si la tabla ya existe y solo necesitas agregar la columna:
+-- ALTER TABLE empaques ADD COLUMN IF NOT EXISTS descripcion TEXT;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/models.dart';
@@ -259,10 +260,12 @@ class DashboardScreen extends ConsumerWidget {
       TextEditingController ctrl,
       String hint, {
       TextInputType? keyboardType,
+      List<TextInputFormatter>? inputFormatters,
     }) =>
         TextField(
           controller: ctrl,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
@@ -593,7 +596,8 @@ class DashboardScreen extends ConsumerWidget {
                                 buildField(
                                   cantPorUnidadCtrl,
                                   'Ej. 20',
-                                  keyboardType: TextInputType.number,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                                 ),
                               ],
                             ],

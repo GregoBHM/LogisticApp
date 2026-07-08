@@ -50,6 +50,7 @@ class Empaque(Base):
     nombre = Column(String(100), nullable=False)
     unidad_medida = Column(String(50), nullable=False)
     cantidad_por_unidad = Column(Float, nullable=False)
+    descripcion = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     proyecto = relationship("Proyecto", back_populates="empaques")

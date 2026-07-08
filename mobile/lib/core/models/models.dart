@@ -87,6 +87,7 @@ class EmpaqueModel {
   final String nombre;
   final String unidadMedida;
   final double cantidadPorUnidad;
+  final String? descripcion;
   final DateTime createdAt;
 
   const EmpaqueModel({
@@ -95,6 +96,7 @@ class EmpaqueModel {
     required this.nombre,
     required this.unidadMedida,
     required this.cantidadPorUnidad,
+    this.descripcion,
     required this.createdAt,
   });
 
@@ -104,6 +106,7 @@ class EmpaqueModel {
         nombre: json['nombre'] as String,
         unidadMedida: json['unidad_medida'] as String,
         cantidadPorUnidad: (json['cantidad_por_unidad'] as num).toDouble(),
+        descripcion: json['descripcion'] as String?,
         createdAt: DateTime.parse(json['created_at'] as String),
       );
 
@@ -111,6 +114,7 @@ class EmpaqueModel {
         'nombre': nombre,
         'unidad_medida': unidadMedida,
         'cantidad_por_unidad': cantidadPorUnidad,
+        if (descripcion != null) 'descripcion': descripcion,
       };
 }
 

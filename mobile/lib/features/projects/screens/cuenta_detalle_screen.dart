@@ -1558,8 +1558,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
                               ),
                               Text(
                                 ventaPorMonto
-                                    ? 'Pones el monto → la cantidad se calcula sola'
-                                    : 'Pones cantidad → el total se calcula solo',
+                                    ? 'Solo ingresas cantidad y total'
+                                    : 'Ingresas todos los detalles',
                                 style: const TextStyle(
                                   color: AppColors.textMuted,
                                   fontSize: 11,
@@ -1573,17 +1573,17 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 14),
                   // CLIENTE
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Cliente',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
+                  if (!ventaPorMonto) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Cliente',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                      if (!ventaPorMonto)
                         GestureDetector(
                           onTap: () => setPublico(setModal),
                           child: const Text(
@@ -1595,59 +1595,44 @@ class CuentaDetalleScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: clienteCtrl,
-                    readOnly: ventaPorMonto,
-                    style: TextStyle(
-                      color: ventaPorMonto
-                          ? AppColors.cream
-                          : AppColors.textPrimary,
-                      fontSize: 14,
-                      fontWeight: ventaPorMonto
-                          ? FontWeight.w600
-                          : FontWeight.normal,
+                      ],
                     ),
-                    decoration: InputDecoration(
-                      hintText: 'Nombre del comprador',
-                      hintStyle: const TextStyle(
-                        color: AppColors.textMuted,
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: clienteCtrl,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
                         fontSize: 14,
                       ),
-                      filled: true,
-                      fillColor: ventaPorMonto
-                          ? AppColors.cream.withValues(alpha: 0.08)
-                          : AppColors.background,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: ventaPorMonto
-                              ? AppColors.cream
-                              : AppColors.border,
+                      decoration: InputDecoration(
+                        hintText: 'Nombre del comprador',
+                        hintStyle: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 14,
                         ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: ventaPorMonto
-                              ? AppColors.cream
-                              : AppColors.border,
+                        filled: true,
+                        fillColor: AppColors.background,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: AppColors.border),
                         ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.cream),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: AppColors.cream),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  // CAMPOS: Cantidad + Precio (modo normal) o solo Precio (modo público)
+                    const SizedBox(height: 12),
+                  ],
+                  // CAMPOS: Cantidad + Precio (modo normal) o solo Cantidad (modo público)
                   AnimatedSize(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeInOut,
@@ -1681,9 +1666,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
                             ],
                           )
                         : _sheetField(
-                            precioCtrl,
-                            'Precio /${liveCuenta.unidadMedida}',
-                            'Ej: 4.00',
+                            cantidadCtrl,
+                            'Cantidad (${liveCuenta.unidadMedida})',
+                            'Ej: 29.8',
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                             onChanged: (_) => setModal(() {}),
@@ -1772,141 +1757,142 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   // MODO COBRO
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setModal(() => cobrarAhora = true),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 11),
-                            decoration: BoxDecoration(
-                              color: cobrarAhora
-                                  ? AppColors.cream
-                                  : AppColors.background,
-                              borderRadius: BorderRadius.circular(9),
-                              border: Border.all(
+                  if (!ventaPorMonto) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setModal(() => cobrarAhora = true),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              decoration: BoxDecoration(
                                 color: cobrarAhora
                                     ? AppColors.cream
-                                    : AppColors.border,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Cobro al Instante',
-                                style: TextStyle(
+                                    : AppColors.background,
+                                borderRadius: BorderRadius.circular(9),
+                                border: Border.all(
                                   color: cobrarAhora
-                                      ? AppColors.background
-                                      : AppColors.textSecondary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
+                                      ? AppColors.cream
+                                      : AppColors.border,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Cobro al Instante',
+                                  style: TextStyle(
+                                    color: cobrarAhora
+                                        ? AppColors.background
+                                        : AppColors.textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setModal(() {
-                            cobrarAhora = false;
-                            abonoCtrl.clear();
-                          }),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 11),
-                            decoration: BoxDecoration(
-                              color: !cobrarAhora
-                                  ? AppColors.cream.withValues(alpha: 0.15)
-                                  : AppColors.background,
-                              borderRadius: BorderRadius.circular(9),
-                              border: Border.all(
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setModal(() {
+                              cobrarAhora = false;
+                              abonoCtrl.clear();
+                            }),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              decoration: BoxDecoration(
                                 color: !cobrarAhora
-                                    ? AppColors.cream
-                                    : AppColors.border,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'A Crédito (Fiado)',
-                                style: TextStyle(
+                                    ? AppColors.cream.withValues(alpha: 0.15)
+                                    : AppColors.background,
+                                borderRadius: BorderRadius.circular(9),
+                                border: Border.all(
                                   color: !cobrarAhora
                                       ? AppColors.cream
-                                      : AppColors.textSecondary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
+                                      : AppColors.border,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'A Crédito (Fiado)',
+                                  style: TextStyle(
+                                    color: !cobrarAhora
+                                        ? AppColors.cream
+                                        : AppColors.textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
+                        ),
+                      ],
+                    ),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      child: cobrarAhora
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: _sheetField(
+                                abonoCtrl,
+                                'Monto recibido ahora',
+                                '0.00',
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                                onChanged: (_) => setModal(() {}),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    // RESUMEN SALDO
+                    if (total > 0) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: saldo == 0
+                              ? AppColors.positiveSubtle
+                              : AppColors.negativeSubtle,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: saldo == 0
+                                ? AppColors.positive.withValues(alpha: 0.3)
+                                : AppColors.negative.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              saldo == 0 ? '✓ Cancelado' : 'Queda pendiente',
+                              style: TextStyle(
+                                color: saldo == 0
+                                    ? AppColors.positive
+                                    : AppColors.cream,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              saldo == 0
+                                  ? 'S/ ${total.toStringAsFixed(2)}'
+                                  : 'S/ ${saldo.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                color: saldo == 0
+                                    ? AppColors.positive
+                                    : AppColors.cream,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeInOut,
-                    child: cobrarAhora
-                        ? Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: _sheetField(
-                              abonoCtrl,
-                              ventaPorMonto ? 'Monto Recibido (Dinero entregado por el cliente)' : 'Monto recibido ahora',
-                              '0.00',
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-                              onChanged: (_) => setModal(() {}),
-                              isProminent: ventaPorMonto,
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                  // RESUMEN SALDO
-                  if (total > 0) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: saldo == 0
-                            ? AppColors.positiveSubtle
-                            : AppColors.negativeSubtle,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: saldo == 0
-                              ? AppColors.positive.withValues(alpha: 0.3)
-                              : AppColors.negative.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            saldo == 0 ? '✓ Cancelado' : 'Queda pendiente',
-                            style: TextStyle(
-                              color: saldo == 0
-                                  ? AppColors.positive
-                                  : AppColors.cream,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                          Text(
-                            saldo == 0
-                                ? 'S/ ${total.toStringAsFixed(2)}'
-                                : 'S/ ${saldo.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              color: saldo == 0
-                                  ? AppColors.positive
-                                  : AppColors.cream,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                   const SizedBox(height: 12),
                   GestureDetector(
@@ -1973,14 +1959,15 @@ class CuentaDetalleScreen extends ConsumerWidget {
                       onPressed: loading
                           ? null
                           : () async {
-                              final cliente = clienteCtrl.text.trim();
-                              final precio = double.tryParse(precioCtrl.text);
+                              final cliente = ventaPorMonto ? 'Público' : clienteCtrl.text.trim();
                               final total = double.tryParse(totalCtrl.text);
-                              final abono =
-                                  double.tryParse(abonoCtrl.text) ?? 0.0;
-                              final kilos = ventaPorMonto
-                                  ? null
-                                  : double.tryParse(cantidadCtrl.text);
+                              final kilos = double.tryParse(cantidadCtrl.text);
+                              final precio = ventaPorMonto
+                                  ? (total != null && kilos != null && kilos > 0 ? total / kilos : 0.0)
+                                  : double.tryParse(precioCtrl.text);
+                              final abono = ventaPorMonto
+                                  ? (total ?? 0.0)
+                                  : (double.tryParse(abonoCtrl.text) ?? 0.0);
 
                               // Validaciones
                               if (cliente.isEmpty) {
@@ -1993,12 +1980,10 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                 );
                                 return;
                               }
-                              if (!ventaPorMonto && kilos == null) {
+                              if (kilos == null || kilos <= 0) {
                                 ScaffoldMessenger.of(ctx2).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
-                                      'Ingresa la cantidad',
-                                    ),
+                                    content: Text('Ingresa una cantidad válida'),
                                   ),
                                 );
                                 return;
@@ -2013,7 +1998,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                 );
                                 return;
                               }
-                              if (precio == null || precio <= 0) {
+                              if (!ventaPorMonto && (precio == null || precio <= 0)) {
                                 ScaffoldMessenger.of(ctx2).showSnackBar(
                                   const SnackBar(
                                     content: Text('Ingresa el precio unitario'),
@@ -2021,10 +2006,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                 );
                                 return;
                               }
-                              // Solo validar stock en modo tradicional (en modo público el servidor valida)
-                              if (!ventaPorMonto &&
-                                  kilos != null &&
-                                  kilos > liveCuenta.stockRestante) {
+                              if (kilos > liveCuenta.stockRestante) {
                                 ScaffoldMessenger.of(ctx2).showSnackBar(
                                   SnackBar(
                                     content: Text(
@@ -2044,7 +2026,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                       registradoPor: '',
                                       cliente: cliente,
                                       cantidadVendida: kilos,
-                                      precioUnitario: precio,
+                                      precioUnitario: precio ?? 0.0,
                                       totalVenta: total,
                                       fechaVenta: fechaVenta,
                                       montoInicialPagado: abono,

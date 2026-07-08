@@ -16,6 +16,7 @@ class EmpaqueRepository {
     required String nombre,
     required String unidadMedida,
     required double cantidadPorUnidad,
+    String? descripcion,
   }) async {
     final res = await _api.client.post(
       '/proyectos/$proyectoId/empaques',
@@ -23,6 +24,8 @@ class EmpaqueRepository {
         'nombre': nombre.trim(),
         'unidad_medida': unidadMedida,
         'cantidad_por_unidad': cantidadPorUnidad,
+        if (descripcion != null && descripcion.trim().isNotEmpty)
+          'descripcion': descripcion.trim(),
       },
     );
     return EmpaqueModel.fromJson(res.data);

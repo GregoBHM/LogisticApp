@@ -47,6 +47,7 @@ class EmpaqueCreate(BaseModel):
     nombre: str
     unidad_medida: str
     cantidad_por_unidad: float
+    descripcion: Optional[str] = None
 
 class EmpaqueResponse(BaseModel):
     id: str
@@ -54,6 +55,7 @@ class EmpaqueResponse(BaseModel):
     nombre: str
     unidad_medida: str
     cantidad_por_unidad: float
+    descripcion: Optional[str] = None
     created_at: datetime
 
     class Config:
