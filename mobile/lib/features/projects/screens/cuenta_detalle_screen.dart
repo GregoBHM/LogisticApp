@@ -11,12 +11,14 @@ class CuentaDetalleScreen extends ConsumerWidget {
   final CuentaResumenModel cuenta;
   final String proyectoNombre;
   final String monedaSimbolo;
+  final String tipoPlantilla;
 
   const CuentaDetalleScreen({
     super.key,
     required this.cuenta,
     required this.proyectoNombre,
     this.monedaSimbolo = 'S/',
+    this.tipoPlantilla = 'COMERCIO',
   });
 
   @override
@@ -40,7 +42,7 @@ class CuentaDetalleScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back_ios_new, size: 16),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(cuenta.producto),
+        title: Text(tipoPlantilla == 'TRANSPORTE' ? cuenta.nombre : cuenta.producto),
         actions: [
           if (estaAbierta)
             IconButton(
@@ -63,9 +65,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Ventas',
-                  style: TextStyle(
+                Text(
+                  tipoPlantilla == 'TRANSPORTE' ? 'Fletes / Ingresos' : 'Ventas',
+                  style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -75,9 +77,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 if (estaAbierta)
                   GestureDetector(
                     onTap: () => _showNuevaVentaSheet(context, ref, liveCuenta),
-                    child: const Text(
-                      '+ Nueva Venta',
-                      style: TextStyle(
+                    child: Text(
+                      tipoPlantilla == 'TRANSPORTE' ? '+ Registrar Flete' : '+ Nueva Venta',
+                      style: const TextStyle(
                         color: AppColors.cream,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -116,9 +118,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Gastos Operativos',
-                  style: TextStyle(
+                Text(
+                  tipoPlantilla == 'TRANSPORTE' ? 'Gastos del Vehículo' : 'Gastos Operativos',
+                  style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -235,21 +237,23 @@ class CuentaDetalleScreen extends ConsumerWidget {
           Row(
             children: [
               _resumenStat(
-                'Inversión',
+                tipoPlantilla == 'TRANSPORTE' ? 'Inv. Inicial' : 'Inversión',
                 liveCuenta.inversionTotal.toStringAsFixed(2),
                 Icons.arrow_upward,
                 AppColors.negative,
               ),
               _resumenStat(
-                'Ingresos',
+                tipoPlantilla == 'TRANSPORTE' ? 'Cobrado' : 'Ingresos',
                 liveCuenta.totalCobrado.toStringAsFixed(2),
                 Icons.arrow_downward,
                 AppColors.positive,
               ),
               _resumenStat(
-                'Stock',
-                '${liveCuenta.stockRestante.toStringAsFixed(0)} ${liveCuenta.unidadMedida}',
-                Icons.inventory_2_outlined,
+                tipoPlantilla == 'TRANSPORTE' ? 'Viajes' : 'Stock',
+                tipoPlantilla == 'TRANSPORTE'
+                    ? '${liveCuenta.stockRestante.toStringAsFixed(0)} realizados'
+                    : '${liveCuenta.stockRestante.toStringAsFixed(0)} ${liveCuenta.unidadMedida}',
+                tipoPlantilla == 'TRANSPORTE' ? Icons.local_shipping_rounded : Icons.inventory_2_outlined,
                 AppColors.cream,
               ),
             ],
@@ -801,45 +805,53 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                     Expanded(
+                    Expanded(
                       child: _sheetField(
                         cantidadCtrl,
                         'Cantidad',
                         'Ej: 29.8',
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                        ],
                         onChanged: (_) {
                           recalcTotal(setModal);
                           recalcPrecio(setModal);
                         },
                       ),
                     ),
-                     const SizedBox(width: 12),
-                     Expanded(
-                       child: _sheetField(
-                         precioCtrl,
-                         'Precio unitario',
-                         'Ej: 3.50',
-                         keyboardType: const TextInputType.numberWithOptions(
-                           decimal: true,
-                         ),
-                         inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-                         onChanged: (_) => recalcTotal(setModal),
-                       ),
-                     ),
-                   ],
-                 ),
-                 const SizedBox(height: 12),
-                 _sheetField(
-                   totalCtrl,
-                   'Total',
-                   'Ej: 104.30',
-                   keyboardType: const TextInputType.numberWithOptions(
-                     decimal: true,
-                   ),
-                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-                   onChanged: (_) => recalcPrecio(setModal),
-                 ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _sheetField(
+                        precioCtrl,
+                        'Precio unitario',
+                        'Ej: 3.50',
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                        ],
+                        onChanged: (_) => recalcTotal(setModal),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _sheetField(
+                  totalCtrl,
+                  'Total',
+                  'Ej: 104.30',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                  ],
+                  onChanged: (_) => recalcPrecio(setModal),
+                ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -1207,7 +1219,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
               ),
               const SizedBox(height: 12),
               _sheetField(
@@ -1333,7 +1347,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -1434,12 +1450,6 @@ class CuentaDetalleScreen extends ConsumerWidget {
       });
     }
 
-    void setPublico(void Function(void Function()) setModal) {
-      setModal(() {
-        clienteCtrl.text = 'Público';
-      });
-    }
-
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
@@ -1481,9 +1491,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Nueva Venta',
-                        style: TextStyle(
+                      Text(
+                        tipoPlantilla == 'TRANSPORTE' ? 'Registrar Flete' : 'Nueva Venta',
+                        style: const TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -1493,7 +1503,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Stock disponible: ${liveCuenta.stockRestante.toStringAsFixed(0)} ${liveCuenta.unidadMedida}',
+                    tipoPlantilla == 'TRANSPORTE'
+                        ? 'Empresa/cliente del flete'
+                        : 'Stock disponible: ${liveCuenta.stockRestante.toStringAsFixed(0)} ${liveCuenta.unidadMedida}',
                     style: const TextStyle(
                       color: AppColors.textMuted,
                       fontSize: 13,
@@ -1584,17 +1596,6 @@ class CuentaDetalleScreen extends ConsumerWidget {
                             fontSize: 12,
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () => setPublico(setModal),
-                          child: const Text(
-                            '+ Público',
-                            style: TextStyle(
-                              color: AppColors.cream,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -1644,8 +1645,15 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                   cantidadCtrl,
                                   'Cantidad (${liveCuenta.unidadMedida})',
                                   'Ej: 29.8',
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                      RegExp(r'[0-9.]'),
+                                    ),
+                                  ],
                                   onChanged: (_) {
                                     recalcTotal(setModal);
                                     recalcPrecio(setModal);
@@ -1658,19 +1666,32 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                   precioCtrl,
                                   'Precio /${liveCuenta.unidadMedida}',
                                   'Ej: 4.00',
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                      RegExp(r'[0-9.]'),
+                                    ),
+                                  ],
                                   onChanged: (_) => recalcTotal(setModal),
                                 ),
                               ),
                             ],
                           )
                         : _sheetField(
-                            cantidadCtrl,
-                            'Cantidad (${liveCuenta.unidadMedida})',
-                            'Ej: 29.8',
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                            precioCtrl,
+                            'Precio /${liveCuenta.unidadMedida}',
+                            'Ej: 4.00',
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[0-9.]'),
+                              ),
+                            ],
                             onChanged: (_) => setModal(() {}),
                           ),
                   ),
@@ -1689,31 +1710,36 @@ class CuentaDetalleScreen extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.cream.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              '',
-                              style: TextStyle(
-                                color: AppColors.cream,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
+                          if (ventaPorMonto && double.tryParse(totalCtrl.text) != null && double.tryParse(precioCtrl.text) != null && double.tryParse(precioCtrl.text)! > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.cream.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Equivale a: ${((double.tryParse(totalCtrl.text) ?? 0) / (double.tryParse(precioCtrl.text) ?? 1)).toStringAsFixed(2)} ${liveCuenta.unidadMedida}',
+                                style: const TextStyle(
+                                  color: AppColors.cream,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: totalCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                        ],
                         onChanged: (_) => recalcPrecio(setModal),
                         style: const TextStyle(
                           color: AppColors.textPrimary,
@@ -1838,8 +1864,15 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                 abonoCtrl,
                                 'Monto recibido ahora',
                                 '0.00',
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'[0-9.]'),
+                                  ),
+                                ],
                                 onChanged: (_) => setModal(() {}),
                               ),
                             )
@@ -1959,12 +1992,16 @@ class CuentaDetalleScreen extends ConsumerWidget {
                       onPressed: loading
                           ? null
                           : () async {
-                              final cliente = ventaPorMonto ? 'Público' : clienteCtrl.text.trim();
+                              final cliente = ventaPorMonto
+                                  ? 'Público'
+                                  : clienteCtrl.text.trim();
                               final total = double.tryParse(totalCtrl.text);
-                              final kilos = double.tryParse(cantidadCtrl.text);
-                              final precio = ventaPorMonto
-                                  ? (total != null && kilos != null && kilos > 0 ? total / kilos : 0.0)
-                                  : double.tryParse(precioCtrl.text);
+                              final precio = double.tryParse(precioCtrl.text);
+                              final kilos = ventaPorMonto
+                                  ? (total != null && precio != null && precio > 0
+                                        ? total / precio
+                                        : 0.0)
+                                  : double.tryParse(cantidadCtrl.text);
                               final abono = ventaPorMonto
                                   ? (total ?? 0.0)
                                   : (double.tryParse(abonoCtrl.text) ?? 0.0);
@@ -1983,7 +2020,9 @@ class CuentaDetalleScreen extends ConsumerWidget {
                               if (kilos == null || kilos <= 0) {
                                 ScaffoldMessenger.of(ctx2).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Ingresa una cantidad válida'),
+                                    content: Text(
+                                      'Ingresa una cantidad válida',
+                                    ),
                                   ),
                                 );
                                 return;
@@ -1998,7 +2037,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
                                 );
                                 return;
                               }
-                              if (!ventaPorMonto && (precio == null || precio <= 0)) {
+                              if (!ventaPorMonto &&
+                                  (precio == null || precio <= 0)) {
                                 ScaffoldMessenger.of(ctx2).showSnackBar(
                                   const SnackBar(
                                     content: Text('Ingresa el precio unitario'),
@@ -2144,14 +2184,51 @@ class CuentaDetalleScreen extends ConsumerWidget {
                 montoCtrl,
                 'Cantidad a cobrar',
                 'Ej: ${venta.saldoPendiente.toStringAsFixed(2)}',
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
               ),
               const SizedBox(height: 12),
               _sheetField(
                 notaCtrl,
                 'Nota (opcional)',
                 'Ej: Transferencia, Efectivo...',
+              ),
+              const SizedBox(height: 8),
+              // ─── BOTONES RÁPIDOS DE MÉTODO DE PAGO ──────────────────
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ['Efectivo', 'Transferencia', 'Yape', 'Plin'].map((metodo) {
+                  final sel = notaCtrl.text == metodo;
+                  return GestureDetector(
+                    onTap: () => setModal(() {
+                      notaCtrl.text = sel ? '' : metodo;
+                    }),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Text(
+                        metodo,
+                        style: TextStyle(
+                          color: sel ? AppColors.background : AppColors.cream,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -2284,15 +2361,55 @@ class CuentaDetalleScreen extends ConsumerWidget {
               _sheetField(
                 conceptoCtrl,
                 'Descripción',
-                'Ej: Estibadores, Flete, Mallas',
+                tipoPlantilla == 'TRANSPORTE' ? 'Ej: Llantas, Combustible, Chofer' : 'Ej: Estibadores, Flete, Mallas',
+              ),
+              const SizedBox(height: 8),
+              // ─── BOTONES RÁPIDOS DE CONCEPTO DE GASTO ──────────────
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: (tipoPlantilla == 'TRANSPORTE'
+                    ? ['Combustible', 'Chofer', 'Llantas', 'Mantenimiento', 'Peaje', 'Mecánico']
+                    : ['Estibadores', 'Flete', 'Mallas', 'Pasajes', 'Comida']
+                ).map((concepto) {
+                  final sel = conceptoCtrl.text == concepto;
+                  return GestureDetector(
+                    onTap: () => setModal(() {
+                      conceptoCtrl.text = sel ? '' : concepto;
+                    }),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Text(
+                        concepto,
+                        style: TextStyle(
+                          color: sel ? AppColors.background : AppColors.cream,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
               const SizedBox(height: 12),
               _sheetField(
                 montoCtrl,
                 'Monto',
                 'Ej: 150.00',
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -2460,8 +2577,8 @@ class CuentaDetalleScreen extends ConsumerWidget {
               fontSize: 14,
             ),
             filled: true,
-            fillColor: isProminent 
-                ? AppColors.cream.withValues(alpha: 0.05) 
+            fillColor: isProminent
+                ? AppColors.cream.withValues(alpha: 0.05)
                 : AppColors.background,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),

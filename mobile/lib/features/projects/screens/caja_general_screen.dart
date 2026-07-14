@@ -453,6 +453,42 @@ class _NuevaTransaccionFormState extends ConsumerState<_NuevaTransaccionForm> {
               validator: (v) => v == null || v.isEmpty ? 'Requerido' : null,
               textCapitalization: TextCapitalization.sentences,
             ),
+            const SizedBox(height: 8),
+            // ─── BOTONES RÁPIDOS DINÁMICOS ──────────────────────
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: (_tipo == 'gasto'
+                      ? ['Sueldos', 'Alquiler', 'Servicios', 'Combustible', 'Otros']
+                      : ['Aporte de Socio', 'Préstamo', 'Venta Externa'])
+                  .map((opcion) {
+                final sel = _descController.text == opcion;
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _descController.text = sel ? '' : opcion;
+                  }),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Text(
+                      opcion,
+                      style: TextStyle(
+                        color: sel ? AppColors.background : AppColors.cream,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _montoController,

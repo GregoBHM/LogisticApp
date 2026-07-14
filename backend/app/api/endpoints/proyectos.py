@@ -68,6 +68,7 @@ async def create_proyecto(
         tipo_unidad_default=proyecto_in.tipo_unidad_default,
         unidad_medida_default=proyecto_in.unidad_medida_default,
         cantidad_por_unidad_default=proyecto_in.cantidad_por_unidad_default,
+        tipo_plantilla=proyecto_in.tipo_plantilla,
         creado_por=current_user.id
     )
     db.add(db_proyecto)

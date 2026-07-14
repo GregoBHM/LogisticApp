@@ -33,6 +33,7 @@ class Proyecto(Base):
     unidad_medida_default = Column(String, nullable=True)
     cantidad_por_unidad_default = Column(Float, nullable=True)
     creado_por = Column(UUID(as_uuid=False), ForeignKey("perfiles.id"), nullable=False)
+    tipo_plantilla = Column(String, default="COMERCIO", nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

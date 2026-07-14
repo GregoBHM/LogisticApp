@@ -21,6 +21,7 @@ class ProyectoRepository {
     String? tipoUnidadDefault,
     String? unidadMedidaDefault,
     double? cantidadPorUnidadDefault,
+    String tipoPlantilla = 'COMERCIO',
   }) async {
     final res = await _api.client.post('/proyectos', data: {
       'nombre': nombre.trim(),
@@ -31,6 +32,7 @@ class ProyectoRepository {
       if (tipoUnidadDefault != null) 'tipo_unidad_default': tipoUnidadDefault.trim(),
       if (unidadMedidaDefault != null) 'unidad_medida_default': unidadMedidaDefault,
       if (cantidadPorUnidadDefault != null) 'cantidad_por_unidad_default': cantidadPorUnidadDefault,
+      'tipo_plantilla': tipoPlantilla,
     });
     return ProyectoModel.fromJson(res.data);
   }

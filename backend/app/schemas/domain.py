@@ -36,6 +36,7 @@ class ProyectoCreate(BaseModel):
     tipo_unidad_default: Optional[str] = None
     unidad_medida_default: Optional[str] = None
     cantidad_por_unidad_default: Optional[float] = None
+    tipo_plantilla: str = "COMERCIO"
 
 class ProyectoInvite(BaseModel):
     email: EmailStr
@@ -72,6 +73,7 @@ class ProyectoResponse(BaseModel):
     unidad_medida_default: Optional[str] = None
     cantidad_por_unidad_default: Optional[float] = None
     creado_por: str
+    tipo_plantilla: str = "COMERCIO"
     created_at: datetime
     updated_at: datetime
 

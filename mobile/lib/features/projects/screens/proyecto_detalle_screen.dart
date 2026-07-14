@@ -720,6 +720,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
               cuenta: cuenta,
               proyectoNombre: proyecto.nombre,
               monedaSimbolo: sym,
+              tipoPlantilla: proyecto.tipoPlantilla,
             ),
           ),
         ),
@@ -1621,25 +1622,83 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    'Nueva Cuenta',
-                    style: TextStyle(
+                  Text(
+                    proyecto.tipoPlantilla == 'TRANSPORTE'
+                        ? 'Nuevo Vehículo'
+                        : 'Nueva Cuenta',
+                    style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _sheetField(nombreCtrl, 'Nombre de la cuenta', 'Ej: Camión del Lunes'),
+                  _sheetField(
+                    nombreCtrl,
+                    proyecto.tipoPlantilla == 'TRANSPORTE' ? 'Nombre / Placa' : 'Nombre de la cuenta',
+                    proyecto.tipoPlantilla == 'TRANSPORTE' ? 'Ej: Camión Norte — ABC-123' : 'Ej: Camión del Lunes',
+                  ),
                   const SizedBox(height: 12),
                   _sheetField(
                     productoCtrl,
-                    'Producto o Servicio',
-                    productoCtrl.text.isNotEmpty ? productoCtrl.text : 'Ej: Mango, Ropa, Servicio',
+                    proyecto.tipoPlantilla == 'TRANSPORTE' ? 'Tipo de servicio' : 'Producto o Servicio',
+                    proyecto.tipoPlantilla == 'TRANSPORTE' ? 'Ej: Flete, Transporte de carga' : productoCtrl.text.isNotEmpty ? productoCtrl.text : 'Ej: Mango, Ropa, Servicio',
                   ),
-                  const SizedBox(height: 16),
-                  // ─── SELECTOR INTELIGENTE DE EMPAQUE ──────────────────────
-                  empaquesAsync.when(
+                  // ─── BOTONES RÁPIDOS DE PRODUCTO (DINÁMICOS) ──────────────────
+                  Builder(
+                    builder: (context) {
+                      final cuentasAsync = ref.watch(cuentasProvider(proyecto.id));
+                      final productosUsados = cuentasAsync.value
+                              ?.map((c) => c.producto)
+                              .where((p) => p.isNotEmpty)
+                              .toSet()
+                              .toList() ??
+                          [];
+
+                      if (productosUsados.isEmpty) return const SizedBox.shrink();
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: productosUsados.map((prod) {
+                              final sel = productoCtrl.text == prod;
+                              return GestureDetector(
+                                onTap: () => setModal(() {
+                                  productoCtrl.text = sel ? '' : prod;
+                                }),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                  decoration: BoxDecoration(
+                                    color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    prod,
+                                    style: TextStyle(
+                                      color: sel ? AppColors.background : AppColors.cream,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      );
+                    },
+                  ),
+                  // ─── SELECTOR INTELIGENTE DE EMPAQUE (solo COMERCIO) ──────────────────────
+                  if (proyecto.tipoPlantilla != 'TRANSPORTE')
+                    empaquesAsync.when(
                     loading: () => const SizedBox.shrink(),
                     error: (_, __) => const SizedBox.shrink(),
                     data: (empaques) {
@@ -1791,134 +1850,159 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                       );
                     },
                   ),
-                  // ─── CAMPOS DE EMPAQUE ────────────────────────────────────
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _sheetField(tipoUnidadCtrl, 'Tipo de empaque/lote', 'Ej: Caja, Paquete, Lote'),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Unidad de medida', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                            const SizedBox(height: 6),
-                            Wrap(
-                              spacing: 6,
-                              children: ['und', 'kg', 'lt', 'pz', 'm'].map((u) {
-                                final sel = unidadMedida == u;
-                                return GestureDetector(
-                                  onTap: () => setModal(() => unidadMedida = u),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: sel ? AppColors.cream : AppColors.background,
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(color: sel ? AppColors.cream : AppColors.border),
+                  if (proyecto.tipoPlantilla != 'TRANSPORTE') ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _sheetField(tipoUnidadCtrl, 'Tipo de empaque/lote', 'Ej: Caja, Paquete, Lote'),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Unidad de medida', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                              const SizedBox(height: 6),
+                              Wrap(
+                                spacing: 6,
+                                children: ['und', 'kg', 'lt', 'pz', 'm'].map((u) {
+                                  final sel = unidadMedida == u;
+                                  return GestureDetector(
+                                    onTap: () => setModal(() => unidadMedida = u),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: sel ? AppColors.cream : AppColors.background,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: sel ? AppColors.cream : AppColors.border),
+                                      ),
+                                      child: Text(u, style: TextStyle(color: sel ? AppColors.background : AppColors.textSecondary, fontWeight: FontWeight.w500, fontSize: 12)),
                                     ),
-                                    child: Text(u, style: TextStyle(color: sel ? AppColors.background : AppColors.textSecondary, fontWeight: FontWeight.w500, fontSize: 12)),
-                                  ),
-                                );
-                              }).toList(),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _sheetField(
+                            cantidadCtrl,
+                            empaqueSeleccionado != null ? 'Cantidad de ${empaqueSeleccionado!.nombre}s' : 'Cantidad',
+                            empaqueSeleccionado != null ? 'Ej: 10' : 'Ej: 200',
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                            onChanged: (_) => recalcPrecio(setModal),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _sheetField(
+                            cantPorUnidadCtrl,
+                            'Cant. por empaque ($unidadMedida)',
+                            'Ej: 50',
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                            onChanged: (_) => recalcPrecio(setModal),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (cantidadCtrl.text.isNotEmpty && cantPorUnidadCtrl.text.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.cream.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.inventory_2_outlined, size: 14, color: AppColors.cream),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Stock total: ${((double.tryParse(cantidadCtrl.text) ?? 0) * (double.tryParse(cantPorUnidadCtrl.text) ?? 0)).toStringAsFixed(0)} $unidadMedida',
+                              style: const TextStyle(color: AppColors.cream, fontSize: 13, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _sheetField(
-                          cantidadCtrl,
-                          empaqueSeleccionado != null ? 'Cantidad de ${empaqueSeleccionado!.nombre}s' : 'Cantidad',
-                          empaqueSeleccionado != null ? 'Ej: 10' : 'Ej: 200',
+                    const SizedBox(height: 12),
+                    _sheetField(
+                      inversionCtrl, 'Inversión Total', 'Ej: 5000',
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                      onChanged: (_) => recalcPrecio(setModal),
+                    ),
+                    const SizedBox(height: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text('Precio de Venta /$unidadMedida', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: AppColors.cream.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
+                              child: const Text('Sugerido', style: TextStyle(color: AppColors.cream, fontSize: 10, fontWeight: FontWeight.w600)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: precioCtrl,
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-                          onChanged: (_) => recalcPrecio(setModal),
+                          onChanged: (_) => setModal(() {}),
+                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: 'Se calcula automáticamente',
+                            hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                            filled: true,
+                            fillColor: AppColors.background,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.cream)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _sheetField(
-                          cantPorUnidadCtrl,
-                          'Cant. por empaque ($unidadMedida)',
-                          'Ej: 50',
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-                          onChanged: (_) => recalcPrecio(setModal),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (cantidadCtrl.text.isNotEmpty && cantPorUnidadCtrl.text.isNotEmpty) ...[
-                    const SizedBox(height: 6),
+                        if (precioCtrl.text.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          const Text('A este precio recuperas exactamente tu inversión.', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                        ],
+                      ],
+                    ),
+                  ],
+                  if (proyecto.tipoPlantilla == 'TRANSPORTE') ...[
+                    const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
-                        color: AppColors.cream.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.cream.withValues(alpha: 0.07),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.cream.withValues(alpha: 0.25)),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.inventory_2_outlined, size: 14, color: AppColors.cream),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Stock total: ${((double.tryParse(cantidadCtrl.text) ?? 0) * (double.tryParse(cantPorUnidadCtrl.text) ?? 0)).toStringAsFixed(0)} $unidadMedida',
-                            style: const TextStyle(color: AppColors.cream, fontSize: 13, fontWeight: FontWeight.w600),
+                          const Icon(Icons.info_outline, size: 14, color: AppColors.cream),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Los gastos e ingresos del vehículo se registran dentro del detalle.',
+                              style: TextStyle(color: AppColors.cream, fontSize: 11),
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ],
-                  const SizedBox(height: 12),
-                  _sheetField(
-                    inversionCtrl, 'Inversión Total', 'Ej: 5000',
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-                    onChanged: (_) => recalcPrecio(setModal),
-                  ),
-                  const SizedBox(height: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text('Precio de Venta /$unidadMedida', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: AppColors.cream.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
-                            child: const Text('Sugerido', style: TextStyle(color: AppColors.cream, fontSize: 10, fontWeight: FontWeight.w600)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: precioCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-                        onChanged: (_) => setModal(() {}),
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-                        decoration: InputDecoration(
-                          hintText: 'Se calcula automáticamente',
-                          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-                          filled: true,
-                          fillColor: AppColors.background,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.cream)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        ),
-                      ),
-                      if (precioCtrl.text.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        const Text('A este precio recuperas exactamente tu inversión.', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
-                      ],
-                    ],
-                  ),
                   const SizedBox(height: 12),
                   GestureDetector(
                     onTap: () async {
@@ -1951,6 +2035,40 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                       onPressed: loading ? null : () async {
                         final nombre = nombreCtrl.text.trim();
                         final producto = productoCtrl.text.trim();
+                        final esTransporte = proyecto.tipoPlantilla == 'TRANSPORTE';
+
+                        if (esTransporte) {
+                          // Para Transporte: validación mínima, inversión = 0, precio = 1
+                          if (nombre.isEmpty || producto.isEmpty) {
+                            ScaffoldMessenger.of(ctx2).showSnackBar(const SnackBar(content: Text('Completa nombre y tipo de servicio')));
+                            return;
+                          }
+                          setModal(() => loading = true);
+                          try {
+                            await ref.read(cuentaRepositoryProvider).crearCuenta(
+                              proyectoId: proyecto.id,
+                              nombre: nombre,
+                              producto: producto,
+                              tipoUnidad: 'Viaje',
+                              unidadMedida: 'viaje',
+                              cantidadUnidades: 1,
+                              cantidadPorUnidad: 1,
+                              inversionTotal: 0,
+                              precioUnitario: 1,
+                              creadoPor: '',
+                              fechaApertura: fechaApertura,
+                            );
+                            ref.invalidate(cuentasProvider(proyecto.id));
+                            if (ctx2.mounted) Navigator.pop(ctx2);
+                          } catch (e) {
+                            setModal(() => loading = false);
+                            if (ctx2.mounted) {
+                              ScaffoldMessenger.of(ctx2).showSnackBar(SnackBar(content: Text(ErrorHandler.parse(e))));
+                            }
+                          }
+                          return;
+                        }
+
                         final cantidad = double.tryParse(cantidadCtrl.text);
                         final cpu = double.tryParse(cantPorUnidadCtrl.text);
                         final inversion = double.tryParse(inversionCtrl.text);
@@ -1997,7 +2115,10 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                       ),
                       child: loading
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Crear Cuenta', style: TextStyle(fontWeight: FontWeight.w600)),
+                          : Text(
+                              proyecto.tipoPlantilla == 'TRANSPORTE' ? 'Registrar Vehículo' : 'Crear Cuenta',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
                     ),
                   ),
                 ],

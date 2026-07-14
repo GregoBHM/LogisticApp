@@ -36,6 +36,7 @@ class ProyectoModel {
   final String? unidadMedidaDefault;
   final double? cantidadPorUnidadDefault;
   final String creadoPor;
+  final String tipoPlantilla;
   final DateTime createdAt;
 
   const ProyectoModel({
@@ -49,6 +50,7 @@ class ProyectoModel {
     this.unidadMedidaDefault,
     this.cantidadPorUnidadDefault,
     required this.creadoPor,
+    this.tipoPlantilla = 'COMERCIO',
     required this.createdAt,
   });
 
@@ -65,6 +67,7 @@ class ProyectoModel {
             ? (json['cantidad_por_unidad_default'] as num).toDouble()
             : null,
         creadoPor: json['creado_por'] as String,
+        tipoPlantilla: json['tipo_plantilla'] as String? ?? 'COMERCIO',
         createdAt: DateTime.parse(json['created_at'] as String),
       );
 
@@ -77,6 +80,7 @@ class ProyectoModel {
         'tipo_unidad_default': tipoUnidadDefault,
         'unidad_medida_default': unidadMedidaDefault,
         'cantidad_por_unidad_default': cantidadPorUnidadDefault,
+        'tipo_plantilla': tipoPlantilla,
         'creado_por': creadoPor,
       };
 }

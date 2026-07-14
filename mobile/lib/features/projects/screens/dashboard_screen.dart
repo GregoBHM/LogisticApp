@@ -145,6 +145,22 @@ class DashboardScreen extends ConsumerWidget {
             children: [
               Row(
                 children: [
+                  // ── Ícono del tipo de proyecto ──
+                  Container(
+                    padding: const EdgeInsets.all(5),
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.cream.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      proyecto.tipoPlantilla == 'TRANSPORTE'
+                          ? Icons.local_shipping_rounded
+                          : Icons.storefront_rounded,
+                      color: AppColors.cream,
+                      size: 14,
+                    ),
+                  ),
                   Expanded(
                     child: Text(proyecto.nombre, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w500, fontSize: 15)),
                   ),
@@ -156,7 +172,13 @@ class DashboardScreen extends ConsumerWidget {
                       border: Border.all(color: abiertas > 0 ? AppColors.positive.withValues(alpha: 0.2) : AppColors.border),
                     ),
                     child: Text(
-                      abiertas > 0 ? '$abiertas activa${abiertas > 1 ? 's' : ''}' : 'Sin cuentas activas',
+                      abiertas > 0
+                          ? proyecto.tipoPlantilla == 'TRANSPORTE'
+                              ? '$abiertas vehículo${abiertas > 1 ? 's' : ''} activo${abiertas > 1 ? 's' : ''}'
+                              : '$abiertas activa${abiertas > 1 ? 's' : ''}'
+                          : proyecto.tipoPlantilla == 'TRANSPORTE'
+                              ? 'Sin vehículos'
+                              : 'Sin cuentas activas',
                       style: TextStyle(color: abiertas > 0 ? AppColors.positive : AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -175,7 +197,13 @@ class DashboardScreen extends ConsumerWidget {
                     gananciaTotal >= 0 ? AppColors.positive : AppColors.negative,
                   ),
                   const SizedBox(width: 12),
-                  _metricPill(Icons.inventory_2_outlined, '${cuentas.length} cuenta${cuentas.length != 1 ? 's' : ''}', AppColors.textSecondary),
+                  _metricPill(
+                    proyecto.tipoPlantilla == 'TRANSPORTE' ? Icons.directions_car_rounded : Icons.inventory_2_outlined,
+                    proyecto.tipoPlantilla == 'TRANSPORTE'
+                        ? '${cuentas.length} vehículo${cuentas.length != 1 ? 's' : ''}'
+                        : '${cuentas.length} cuenta${cuentas.length != 1 ? 's' : ''}',
+                    AppColors.textSecondary,
+                  ),
                   const Spacer(),
                   const Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.textMuted),
                 ],
@@ -233,6 +261,7 @@ class DashboardScreen extends ConsumerWidget {
     String monedaCodigo = 'PEN';
     String? unidadMedidaDefault;
     bool showPlantilla = false;
+    String tipoPlantilla = 'COMERCIO';
 
     final monedas = [
       {'simbolo': 'S/', 'codigo': 'PEN', 'label': 'Sol Peruano (S/)'},
@@ -425,9 +454,142 @@ class DashboardScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                // ── TIPO DE PROYECTO ──
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Tipo de proyecto',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        // COMERCIO
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setModalState(() => tipoPlantilla = 'COMERCIO'),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: tipoPlantilla == 'COMERCIO'
+                                    ? AppColors.cream.withValues(alpha: 0.12)
+                                    : AppColors.background,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: tipoPlantilla == 'COMERCIO'
+                                      ? AppColors.cream
+                                      : AppColors.border,
+                                  width: tipoPlantilla == 'COMERCIO' ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.storefront_rounded,
+                                    color: tipoPlantilla == 'COMERCIO'
+                                        ? AppColors.cream
+                                        : AppColors.textMuted,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Comercio',
+                                    style: TextStyle(
+                                      color: tipoPlantilla == 'COMERCIO'
+                                          ? AppColors.cream
+                                          : AppColors.textSecondary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Frutas, ropa, abarrotes',
+                                    style: TextStyle(
+                                      color: tipoPlantilla == 'COMERCIO'
+                                          ? AppColors.cream.withValues(alpha: 0.7)
+                                          : AppColors.textMuted,
+                                      fontSize: 10,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        // TRANSPORTE
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setModalState(() => tipoPlantilla = 'TRANSPORTE'),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: tipoPlantilla == 'TRANSPORTE'
+                                    ? AppColors.cream.withValues(alpha: 0.12)
+                                    : AppColors.background,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: tipoPlantilla == 'TRANSPORTE'
+                                      ? AppColors.cream
+                                      : AppColors.border,
+                                  width: tipoPlantilla == 'TRANSPORTE' ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.local_shipping_rounded,
+                                    color: tipoPlantilla == 'TRANSPORTE'
+                                        ? AppColors.cream
+                                        : AppColors.textMuted,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Transporte',
+                                    style: TextStyle(
+                                      color: tipoPlantilla == 'TRANSPORTE'
+                                          ? AppColors.cream
+                                          : AppColors.textSecondary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Flota, fletes, vehículos',
+                                    style: TextStyle(
+                                      color: tipoPlantilla == 'TRANSPORTE'
+                                          ? AppColors.cream.withValues(alpha: 0.7)
+                                          : AppColors.textMuted,
+                                      fontSize: 10,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
                 const SizedBox(height: 14),
 
-                // ── TOGGLE: PLANTILLA DE OPERACIONES ──
+
                 GestureDetector(
                   onTap: () =>
                       setModalState(() => showPlantilla = !showPlantilla),
@@ -637,6 +799,7 @@ class DashboardScreen extends ConsumerWidget {
                                   cantidadPorUnidadDefault: double.tryParse(
                                     cantPorUnidadCtrl.text,
                                   ),
+                                  tipoPlantilla: tipoPlantilla,
                                 );
                             if (ctx.mounted) Navigator.pop(ctx);
                           }
