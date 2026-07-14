@@ -46,8 +46,8 @@ async def seed_ventas():
                 cuenta_id=cuenta.id,
                 registrado_por=perfil_id,
                 cliente=random.choice(nombres),
-                kilos_vendidos=kilos,
-                precio_por_kg=precio,
+                cantidad_vendida=kilos,
+                precio_unitario=precio,
                 total_venta=total,
                 fecha_venta=fecha_venta.date(),
                 created_at=fecha_venta,
@@ -68,8 +68,8 @@ async def seed_ventas():
         db.add_all(ventas_a_insertar)
         db.add_all(abonos_a_insertar)
         
-        # Descontar kilos y sumar inversión a la cuenta
-        cuenta.kilos_totales -= sum(v.kilos_vendidos for v in ventas_a_insertar)
+        # Descontar unidades y sumar inversión a la cuenta
+        cuenta.stock_total -= sum(v.cantidad_vendida for v in ventas_a_insertar)
         await db.commit()
         
         print(f'¡Se han insertado {len(ventas_a_insertar)} ventas aleatorias (y abonos) desde hace 2 meses exitosamente!')
