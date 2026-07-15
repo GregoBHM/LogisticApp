@@ -173,107 +173,116 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
-            // ─── MIS EMPAQUES ────────────────────────────────────────────────
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Mis Empaques',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => _showNuevoEmpaqueSheet(context, ref),
-                  child: const Text(
-                    '+ Añadir',
+            if (proyecto.tipoPlantilla != 'TRANSPORTE') ...[
+              const SizedBox(height: 24),
+              // ─── MIS EMPAQUES ──────────────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Mis Empaques',
                     style: TextStyle(
-                      color: AppColors.cream,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.5,
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ref.watch(empaquesProvider(proyecto.id)).when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => const SizedBox.shrink(),
-              data: (empaques) {
-                if (empaques.isEmpty) {
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border, style: BorderStyle.solid),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'Sin empaques configurados.\nToca "+ Añadir" para crear el primero.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.6),
+                  GestureDetector(
+                    onTap: () => _showNuevoEmpaqueSheet(context, ref),
+                    child: const Text(
+                      '+ Añadir',
+                      style: TextStyle(
+                        color: AppColors.cream,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  );
-                }
-                return Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: empaques.map((e) {
-                    return GestureDetector(
-                      onLongPress: () => _confirmDeleteEmpaque(context, ref, e),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: AppColors.cream.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.cream.withValues(alpha: 0.4)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              e.nombre,
-                              style: const TextStyle(
-                                color: AppColors.cream,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              '${e.cantidadPorUnidad.toStringAsFixed(1)} ${e.unidadMedida}',
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 11,
-                              ),
-                            ),
-                            if (e.descripcion != null && e.descripcion!.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: Text(
-                                  e.descripcion!,
-                                  style: const TextStyle(
-                                    color: AppColors.textMuted,
-                                    fontSize: 10,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                              ),
-                          ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ref.watch(empaquesProvider(proyecto.id)).when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => const SizedBox.shrink(),
+                data: (empaques) {
+                  if (empaques.isEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border, style: BorderStyle.solid),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'Sin empaques configurados.\nToca "+ Añadir" para crear el primero.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.6),
                         ),
                       ),
                     );
-                  }).toList(),
-                );
-              },
-            ),
+                  }
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: empaques.map((e) {
+                      return GestureDetector(
+                        onLongPress: () => _confirmDeleteEmpaque(context, ref, e),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: AppColors.cream.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.cream.withValues(alpha: 0.4)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                e.nombre,
+                                style: const TextStyle(
+                                  color: AppColors.cream,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (e.descripcion != null && e.descripcion!.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  e.descripcion!,
+                                  style: TextStyle(
+                                    color: AppColors.cream.withValues(alpha: 0.7),
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.inventory_2_outlined, size: 10, color: AppColors.cream),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${e.cantidadPorUnidad} ${e.unidadMedida}/und',
+                                    style: const TextStyle(
+                                      color: AppColors.cream,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ],
             const SizedBox(height: 24),
             const Text(
               'Cuentas',
@@ -1008,7 +1017,10 @@ class ProyectoDetalleScreen extends ConsumerWidget {
     );
     String? unidadMedida = proyecto.unidadMedidaDefault;
     bool loading = false;
-    final unidades = ['kg', 'lb', 'und', 'lt', 'pz', 'm'];
+    final esTransporte = proyecto.tipoPlantilla == 'TRANSPORTE';
+    final unidades = esTransporte
+        ? ['Viaje', 'Ruta', 'Km', 'Ton']
+        : ['kg', 'lb', 'und', 'lt', 'pz', 'm'];
 
     showModalBottomSheet(
       context: context,
@@ -1070,16 +1082,16 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                         color: AppColors.cream.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(
-                        Icons.auto_fix_high_rounded,
+                      child: Icon(
+                        esTransporte ? Icons.local_shipping_rounded : Icons.auto_fix_high_rounded,
                         color: AppColors.cream,
                         size: 14,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'Plantilla de Operaciones',
-                      style: TextStyle(
+                    Text(
+                      esTransporte ? 'Plantilla de Flota' : 'Plantilla de Inventario',
+                      style: const TextStyle(
                         color: AppColors.cream,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -1090,14 +1102,14 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 _sheetField(
                   productoCtrl,
-                  'Producto principal',
-                  'Ej: Papaya, Ropa, Café',
+                  esTransporte ? 'Servicio o ruta frecuente' : 'Producto principal',
+                  esTransporte ? 'Ej: Flete Lima-Piura, Carga Pesada' : 'Ej: Papaya, Ropa, Café',
                 ),
                 const SizedBox(height: 12),
                 _sheetField(
                   tipoUnidadCtrl,
-                  'Tipo de empaque',
-                  'Ej: Caja, Saco, Paquete',
+                  esTransporte ? 'Vehículo principal' : 'Tipo de empaque',
+                  esTransporte ? 'Ej: Camión Volvo, Furgón' : 'Ej: Caja, Saco, Paquete',
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -1152,13 +1164,14 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                 ),
                 if (unidadMedida != null) ...[
                   const SizedBox(height: 12),
-                  _sheetField(
-                    cantPorUnidadCtrl,
-                    'Cantidad por empaque ($unidadMedida)',
-                    'Ej: 20',
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-                  ),
+                  if (!esTransporte)
+                    _sheetField(
+                      cantPorUnidadCtrl,
+                      'Cantidad por empaque ($unidadMedida)',
+                      'Ej: 20',
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                    ),
                 ],
                 const SizedBox(height: 24),
                 SizedBox(
@@ -1223,6 +1236,74 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                             ),
                           )
                         : const Text('Guardar Cambios'),
+                  ),
+                ),
+                // ─── ZONA DE PELIGRO ───────────────────────────────────────────────
+                const Divider(color: AppColors.border, height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      showDialog(
+                        context: context,
+                        builder: (dCtx) => AlertDialog(
+                          backgroundColor: AppColors.surface,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          title: const Text('Eliminar proyecto', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '¿Eliminar "${proyecto.nombre}"?',
+                                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Se borrarán permanentemente todas las cuentas, vehículos, ventas y gastos. Esta acción no se puede deshacer.',
+                                style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dCtx),
+                              child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
+                            ),
+                            ElevatedButton(
+                              onPressed: () async {
+                                Navigator.pop(dCtx);
+                                try {
+                                  await ref.read(proyectoRepositoryProvider).eliminarProyecto(proyecto.id);
+                                  ref.invalidate(proyectosProvider);
+                                  if (context.mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('No se pudo eliminar el proyecto'), backgroundColor: AppColors.negative),
+                                    );
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.negative,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: const Text('Eliminar', style: TextStyle(fontWeight: FontWeight.w600)),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.negative),
+                    label: const Text('Eliminar proyecto', style: TextStyle(color: AppColors.negative, fontWeight: FontWeight.w500)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.negative),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
               ],
@@ -2184,7 +2265,10 @@ class ProyectoDetalleScreen extends ConsumerWidget {
     final descripcionCtrl = TextEditingController();
     String? medidaSeleccionada;
     bool loading = false;
-    const List<String> medidasRapidas = ['kg', 'lb', 'und', 'lt', 'pz', 'm'];
+    final esTransporte = proyecto.tipoPlantilla == 'TRANSPORTE';
+    final List<String> medidasRapidas = esTransporte
+        ? ['Viaje', 'Ruta', 'Km', 'Ton']
+        : ['kg', 'lb', 'und', 'lt', 'pz', 'm'];
 
     showModalBottomSheet(
       context: context,
@@ -2215,22 +2299,28 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    'Nuevo Empaque',
-                    style: TextStyle(
+                  Text(
+                    esTransporte ? 'Nuevo Vehículo' : 'Nuevo Empaque',
+                    style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    'Ej: "Caja Mediana", "Bugui", "Saco de 50kg"',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  Text(
+                    esTransporte
+                        ? 'Ej: "Camión Volvo", "Furgón", "Moto"'
+                        : 'Ej: "Caja Mediana", "Bugui", "Saco de 50kg"',
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                   ),
                   const SizedBox(height: 20),
                   // NOMBRE
-                  _sheetField(nombreCtrl, 'Nombre del empaque', 'Ej: Bugui, Caja, Saco...'),
+                  _sheetField(
+                    nombreCtrl,
+                    esTransporte ? 'Nombre del vehículo' : 'Nombre del empaque',
+                    esTransporte ? 'Ej: Volvo FH, Furgón Azul...' : 'Ej: Bugui, Caja, Saco...',
+                  ),
                   const SizedBox(height: 16),
                   // MEDIDA — botones rápidos + campo libre
                   const Text(
@@ -2345,7 +2435,9 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   _sheetField(
                     descripcionCtrl,
                     'Descripción (opcional)',
-                    'Ej: Tiene 8 bandejas, para papaya de exportación',
+                    esTransporte
+                        ? 'Ej: Placa ABC-123, capacidad 20 Ton'
+                        : 'Ej: Tiene 8 bandejas, para papaya de exportación',
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -2358,7 +2450,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
 
                         if (nombre.isEmpty) {
                           ScaffoldMessenger.of(ctx2).showSnackBar(
-                            const SnackBar(content: Text('Ingresa el nombre del empaque')),
+                            SnackBar(content: Text(esTransporte ? 'Ingresa el nombre del vehículo' : 'Ingresa el nombre del empaque')),
                           );
                           return;
                         }
@@ -2405,7 +2497,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                       ),
                       child: loading
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.background, strokeWidth: 2))
-                          : const Text('Guardar Empaque', style: TextStyle(fontWeight: FontWeight.w600)),
+                          : Text(esTransporte ? 'Guardar Vehículo' : 'Guardar Empaque', style: const TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
@@ -2422,7 +2514,10 @@ class ProyectoDetalleScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: const Text('Eliminar Empaque', style: TextStyle(color: AppColors.textPrimary)),
+        title: Text(
+          proyecto.tipoPlantilla == 'TRANSPORTE' ? 'Eliminar Vehículo' : 'Eliminar Empaque',
+          style: const TextStyle(color: AppColors.textPrimary),
+        ),
         content: Text(
           '¿Eliminar "${empaque.nombre}"? Esto no afecta las cuentas ya creadas.',
           style: const TextStyle(color: AppColors.textSecondary),

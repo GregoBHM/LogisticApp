@@ -53,6 +53,29 @@ async def update_proyecto(
     await db.refresh(proyecto)
     return proyecto
 
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_proyecto(
+    id: str,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Proyecto).filter(Proyecto.id == id))
+    proyecto = result.scalars().first()
+    if not proyecto:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+
+    stmt = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == id,
+        ProyectoMiembro.usuario_id == current_user.id
+    )
+    miembro = (await db.execute(stmt)).scalars().first()
+    if not miembro or miembro.rol != "dueño":
+        raise HTTPException(status_code=403, detail="Solo el dueño puede eliminar el proyecto")
+
+    await db.delete(proyecto)
+    await db.commit()
+    return None
+
 @router.post("/", response_model=ProyectoResponse, status_code=status.HTTP_201_CREATED)
 async def create_proyecto(
     proyecto_in: ProyectoCreate,

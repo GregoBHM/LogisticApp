@@ -145,7 +145,6 @@ class DashboardScreen extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  // ── Ícono del tipo de proyecto ──
                   Container(
                     padding: const EdgeInsets.all(5),
                     margin: const EdgeInsets.only(right: 8),
@@ -182,6 +181,47 @@ class DashboardScreen extends ConsumerWidget {
                       style: TextStyle(color: abiertas > 0 ? AppColors.positive : AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w500),
                     ),
                   ),
+                  const SizedBox(width: 4),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, size: 18, color: AppColors.textMuted),
+                    color: AppColors.surface,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: const BorderSide(color: AppColors.border),
+                    ),
+                    onSelected: (value) {
+                      if (value == 'ver') {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => ProyectoDetalleScreen(proyecto: proyecto)));
+                      } else if (value == 'ajustes') {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => ProyectoDetalleScreen(proyecto: proyecto)));
+                      } else if (value == 'eliminar') {
+                        _confirmDeleteProyecto(context, ref, proyecto);
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'ver',
+                        child: Row(
+                          children: const [
+                            Icon(Icons.open_in_new, size: 16, color: AppColors.textSecondary),
+                            SizedBox(width: 10),
+                            Text('Abrir proyecto', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'eliminar',
+                        child: Row(
+                          children: const [
+                            Icon(Icons.delete_outline, size: 16, color: AppColors.negative),
+                            SizedBox(width: 10),
+                            Text('Eliminar proyecto', style: TextStyle(color: AppColors.negative, fontSize: 14)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
               if (proyecto.descripcion?.isNotEmpty == true) ...[
@@ -204,13 +244,75 @@ class DashboardScreen extends ConsumerWidget {
                         : '${cuentas.length} cuenta${cuentas.length != 1 ? 's' : ''}',
                     AppColors.textSecondary,
                   ),
-                  const Spacer(),
-                  const Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.textMuted),
                 ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _confirmDeleteProyecto(BuildContext context, WidgetRef ref, ProyectoModel proyecto) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Eliminar proyecto', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '¿Eliminar "${proyecto.nombre}"?',
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Se borrarán permanentemente todas las cuentas, vehículos, ventas y gastos de este proyecto. Esta acción no se puede deshacer.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ref.read(proyectoRepositoryProvider).eliminarProyecto(proyecto.id);
+                ref.invalidate(proyectosProvider);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Proyecto "${proyecto.nombre}" eliminado'),
+                      backgroundColor: AppColors.surface,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('No se pudo eliminar el proyecto'),
+                      backgroundColor: AppColors.negative,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.negative,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Eliminar', style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
+        ],
       ),
     );
   }
@@ -589,7 +691,6 @@ class DashboardScreen extends ConsumerWidget {
 
                 const SizedBox(height: 14),
 
-
                 GestureDetector(
                   onTap: () =>
                       setModalState(() => showPlantilla = !showPlantilla),
@@ -622,8 +723,10 @@ class DashboardScreen extends ConsumerWidget {
                             color: AppColors.cream.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Icon(
-                            Icons.auto_fix_high_rounded,
+                          child: Icon(
+                            tipoPlantilla == 'TRANSPORTE'
+                                ? Icons.local_shipping_rounded
+                                : Icons.auto_fix_high_rounded,
                             color: AppColors.cream,
                             size: 16,
                           ),
@@ -633,9 +736,11 @@ class DashboardScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Plantilla de Operaciones',
-                                style: TextStyle(
+                              Text(
+                                tipoPlantilla == 'TRANSPORTE'
+                                    ? 'Plantilla de Flota'
+                                    : 'Plantilla de Inventario',
+                                style: const TextStyle(
                                   color: AppColors.cream,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -644,8 +749,12 @@ class DashboardScreen extends ConsumerWidget {
                               const SizedBox(height: 2),
                               Text(
                                 showPlantilla
-                                    ? 'Los lotes nuevos se rellenan solos'
-                                    : 'Toca para configurar tu producto principal',
+                                    ? (tipoPlantilla == 'TRANSPORTE'
+                                        ? 'Los viajes nuevos se rellenan solos'
+                                        : 'Los lotes nuevos se rellenan solos')
+                                    : (tipoPlantilla == 'TRANSPORTE'
+                                        ? 'Toca para configurar tu vehículo o ruta'
+                                        : 'Toca para configurar tu producto principal'),
                                 style: const TextStyle(
                                   color: AppColors.textMuted,
                                   fontSize: 11,
@@ -682,92 +791,164 @@ class DashboardScreen extends ConsumerWidget {
                               color: AppColors.cream.withValues(alpha: 0.3),
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              buildLabel('¿Qué producto manejas?'),
-                              buildField(
-                                productoCtrl,
-                                'Ej. Papaya, Ropa, Café',
-                              ),
-                              const SizedBox(height: 12),
-                              buildLabel('¿Cómo lo empacas/transportas?'),
-                              buildField(
-                                tipoUnidadCtrl,
-                                'Ej. Caja, Saco, Paquete',
-                              ),
-                              const SizedBox(height: 12),
-                              buildLabel('Unidad de medida'),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: unidades.map((u) {
-                                  final sel = unidadMedidaDefault == u;
-                                  return GestureDetector(
-                                    onTap: () => setModalState(
-                                      () => unidadMedidaDefault = u,
+                          child: tipoPlantilla == 'TRANSPORTE'
+                              // ── PLANTILLA: TRANSPORTE ──
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    buildLabel('¿Vehículo principal?'),
+                                    buildField(
+                                      tipoUnidadCtrl,
+                                      'Ej. Camión Volvo, Furgón, Moto',
                                     ),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(
-                                        milliseconds: 150,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: sel
-                                            ? AppColors.cream
-                                            : AppColors.surface,
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: sel
-                                              ? AppColors.cream
-                                              : AppColors.border,
-                                        ),
-                                        boxShadow: sel
-                                            ? [
-                                                BoxShadow(
-                                                  color: AppColors.cream
-                                                      .withValues(alpha: 0.2),
-                                                  blurRadius: 8,
-                                                  spreadRadius: 0,
-                                                ),
-                                              ]
-                                            : null,
-                                      ),
-                                      child: Text(
-                                        u,
-                                        style: TextStyle(
-                                          color: sel
-                                              ? AppColors.background
-                                              : AppColors.textSecondary,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 13,
-                                        ),
-                                      ),
+                                    const SizedBox(height: 12),
+                                    buildLabel('¿Servicio o ruta frecuente?'),
+                                    buildField(
+                                      productoCtrl,
+                                      'Ej. Flete Lima-Piura, Carga Pesada',
                                     ),
-                                  );
-                                }).toList(),
-                              ),
-                              if (unidadMedidaDefault != null) ...[
-                                const SizedBox(height: 12),
-                                buildLabel(
-                                  'Cantidad por empaque ($unidadMedidaDefault)',
+                                    const SizedBox(height: 12),
+                                    buildLabel('Unidad de servicio'),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: ['Viaje', 'Ruta', 'Km', 'Ton'].map((u) {
+                                        final sel = unidadMedidaDefault == u;
+                                        return GestureDetector(
+                                          onTap: () => setModalState(
+                                            () => unidadMedidaDefault = u,
+                                          ),
+                                          child: AnimatedContainer(
+                                            duration: const Duration(milliseconds: 150),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 14,
+                                              vertical: 8,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: sel
+                                                  ? AppColors.cream
+                                                  : AppColors.surface,
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: sel
+                                                    ? AppColors.cream
+                                                    : AppColors.border,
+                                              ),
+                                              boxShadow: sel
+                                                  ? [
+                                                      BoxShadow(
+                                                        color: AppColors.cream
+                                                            .withValues(alpha: 0.2),
+                                                        blurRadius: 8,
+                                                        spreadRadius: 0,
+                                                      ),
+                                                    ]
+                                                  : null,
+                                            ),
+                                            child: Text(
+                                              u,
+                                              style: TextStyle(
+                                                color: sel
+                                                    ? AppColors.background
+                                                    : AppColors.textSecondary,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ],
+                                )
+                              // ── PLANTILLA: COMERCIO ──
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    buildLabel('¿Qué producto manejas?'),
+                                    buildField(
+                                      productoCtrl,
+                                      'Ej. Papaya, Ropa, Café',
+                                    ),
+                                    const SizedBox(height: 12),
+                                    buildLabel('¿Cómo lo empacas/transportas?'),
+                                    buildField(
+                                      tipoUnidadCtrl,
+                                      'Ej. Caja, Saco, Paquete',
+                                    ),
+                                    const SizedBox(height: 12),
+                                    buildLabel('Unidad de medida'),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: unidades.map((u) {
+                                        final sel = unidadMedidaDefault == u;
+                                        return GestureDetector(
+                                          onTap: () => setModalState(
+                                            () => unidadMedidaDefault = u,
+                                          ),
+                                          child: AnimatedContainer(
+                                            duration: const Duration(
+                                              milliseconds: 150,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 14,
+                                              vertical: 8,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: sel
+                                                  ? AppColors.cream
+                                                  : AppColors.surface,
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: sel
+                                                    ? AppColors.cream
+                                                    : AppColors.border,
+                                              ),
+                                              boxShadow: sel
+                                                  ? [
+                                                      BoxShadow(
+                                                        color: AppColors.cream
+                                                            .withValues(alpha: 0.2),
+                                                        blurRadius: 8,
+                                                        spreadRadius: 0,
+                                                      ),
+                                                    ]
+                                                  : null,
+                                            ),
+                                            child: Text(
+                                              u,
+                                              style: TextStyle(
+                                                color: sel
+                                                    ? AppColors.background
+                                                    : AppColors.textSecondary,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                    if (unidadMedidaDefault != null) ...[
+                                      const SizedBox(height: 12),
+                                      buildLabel(
+                                        'Cantidad por empaque ($unidadMedidaDefault)',
+                                      ),
+                                      buildField(
+                                        cantPorUnidadCtrl,
+                                        'Ej. 20',
+                                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                                buildField(
-                                  cantPorUnidadCtrl,
-                                  'Ej. 20',
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-                                ),
-                              ],
-                            ],
-                          ),
                         )
                       : const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 24),
+
 
                 // ── BOTÓN CREAR ──
                 SizedBox(
