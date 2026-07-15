@@ -175,12 +175,12 @@ class ProyectoDetalleScreen extends ConsumerWidget {
             ),
             if (proyecto.tipoPlantilla != 'TRANSPORTE') ...[
               const SizedBox(height: 24),
-              // ─── MIS EMPAQUES ──────────────────────────────────
+              // ─── PRESENTACIONES ──────────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Mis Empaques',
+                    'Presentaciones del Producto',
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 12,
@@ -216,7 +216,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                       ),
                       child: const Center(
                         child: Text(
-                          'Sin empaques configurados.\nToca "+ Añadir" para crear el primero.',
+                          'Sin presentaciones configuradas.\nToca "+ Añadir" para crear la primera.',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.6),
                         ),
@@ -284,8 +284,8 @@ class ProyectoDetalleScreen extends ConsumerWidget {
               ),
             ],
             const SizedBox(height: 24),
-            const Text(
-              'Cuentas',
+            Text(
+              proyecto.tipoPlantilla == 'TRANSPORTE' ? 'Flota' : 'Lotes / Inversiones',
               style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 12,
@@ -1108,7 +1108,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 _sheetField(
                   tipoUnidadCtrl,
-                  esTransporte ? 'Vehículo principal' : 'Tipo de empaque',
+                  esTransporte ? 'Vehículo principal' : 'Tipo de presentación',
                   esTransporte ? 'Ej: Camión Volvo, Furgón' : 'Ej: Caja, Saco, Paquete',
                 ),
                 const SizedBox(height: 12),
@@ -1167,7 +1167,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   if (!esTransporte)
                     _sheetField(
                       cantPorUnidadCtrl,
-                      'Cantidad por empaque ($unidadMedida)',
+                      'Cantidad por presentación ($unidadMedida)',
                       'Ej: 20',
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
@@ -1368,8 +1368,8 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'Editar Cuenta',
+                Text(
+                  proyecto.tipoPlantilla == 'TRANSPORTE' ? 'Editar Vehículo' : 'Editar Lote',
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 18,
@@ -1394,7 +1394,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     Expanded(
                       child: _sheetField(
                         tipoUnidadCtrl,
-                        'Tipo de empaque/lote',
+                        'Tipo de presentación',
                         'Ej: Caja, Paquete, Lote',
                       ),
                     ),
@@ -1472,7 +1472,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     Expanded(
                       child: _sheetField(
                         cantPorUnidadCtrl,
-                        'Cant. por empaque ($unidadMedida)',
+                        'Cant. por presentación ($unidadMedida)',
                         'Ej: 50',
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
@@ -1706,7 +1706,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   Text(
                     proyecto.tipoPlantilla == 'TRANSPORTE'
                         ? 'Nuevo Vehículo'
-                        : 'Nueva Cuenta',
+                        : 'Nuevo Lote',
                     style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 18,
@@ -1785,7 +1785,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                           Row(
                             children: [
                               const Text(
-                                'Seleccionar empaque',
+                                'Seleccionar presentación',
                                 style: TextStyle(
                                   color: AppColors.textSecondary,
                                   fontSize: 12,
@@ -1931,7 +1931,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: _sheetField(tipoUnidadCtrl, 'Tipo de empaque/lote', 'Ej: Caja, Paquete, Lote'),
+                          child: _sheetField(tipoUnidadCtrl, 'Tipo de presentación', 'Ej: Caja, Paquete, Saco'),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -1980,7 +1980,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                         Expanded(
                           child: _sheetField(
                             cantPorUnidadCtrl,
-                            'Cant. por empaque ($unidadMedida)',
+                            'Cant. por presentación ($unidadMedida)',
                             'Ej: 50',
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
@@ -2192,7 +2192,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                       child: loading
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                           : Text(
-                              proyecto.tipoPlantilla == 'TRANSPORTE' ? 'Registrar Vehículo' : 'Crear Cuenta',
+                              proyecto.tipoPlantilla == 'TRANSPORTE' ? 'Registrar Vehículo' : 'Crear Lote',
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                     ),
@@ -2262,7 +2262,6 @@ class ProyectoDetalleScreen extends ConsumerWidget {
     final nombreCtrl = TextEditingController();
     final cantidadCtrl = TextEditingController();
     final medidaCtrl = TextEditingController();
-    final descripcionCtrl = TextEditingController();
     String? medidaSeleccionada;
     bool loading = false;
     final esTransporte = proyecto.tipoPlantilla == 'TRANSPORTE';
@@ -2300,7 +2299,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    esTransporte ? 'Nuevo Vehículo' : 'Nuevo Empaque',
+                    esTransporte ? 'Nuevo Vehículo' : 'Nueva Presentación',
                     style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 18,
@@ -2318,7 +2317,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                   // NOMBRE
                   _sheetField(
                     nombreCtrl,
-                    esTransporte ? 'Nombre del vehículo' : 'Nombre del empaque',
+                    esTransporte ? 'Nombre del vehículo' : 'Nombre de la presentación',
                     esTransporte ? 'Ej: Volvo FH, Furgón Azul...' : 'Ej: Bugui, Caja, Saco...',
                   ),
                   const SizedBox(height: 16),
@@ -2430,15 +2429,6 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                   ),
-                  const SizedBox(height: 16),
-                  // DESCRIPCIÓN (opcional)
-                  _sheetField(
-                    descripcionCtrl,
-                    'Descripción (opcional)',
-                    esTransporte
-                        ? 'Ej: Placa ABC-123, capacidad 20 Ton'
-                        : 'Ej: Tiene 8 bandejas, para papaya de exportación',
-                  ),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -2450,7 +2440,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
 
                         if (nombre.isEmpty) {
                           ScaffoldMessenger.of(ctx2).showSnackBar(
-                            SnackBar(content: Text(esTransporte ? 'Ingresa el nombre del vehículo' : 'Ingresa el nombre del empaque')),
+                            SnackBar(content: Text(esTransporte ? 'Ingresa el nombre del vehículo' : 'Ingresa el nombre de la presentación')),
                           );
                           return;
                         }
@@ -2474,9 +2464,6 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                             nombre: nombre,
                             unidadMedida: unidad,
                             cantidadPorUnidad: cantidad,
-                            descripcion: descripcionCtrl.text.trim().isEmpty
-                                ? null
-                                : descripcionCtrl.text.trim(),
                           );
                           ref.invalidate(empaquesProvider(proyecto.id));
                           if (ctx2.mounted) Navigator.pop(ctx2);
@@ -2497,7 +2484,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                       ),
                       child: loading
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.background, strokeWidth: 2))
-                          : Text(esTransporte ? 'Guardar Vehículo' : 'Guardar Empaque', style: const TextStyle(fontWeight: FontWeight.w600)),
+                          : Text(esTransporte ? 'Guardar Vehículo' : 'Guardar Presentación', style: const TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
@@ -2515,7 +2502,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         title: Text(
-          proyecto.tipoPlantilla == 'TRANSPORTE' ? 'Eliminar Vehículo' : 'Eliminar Empaque',
+          proyecto.tipoPlantilla == 'TRANSPORTE' ? 'Eliminar Vehículo' : 'Eliminar Presentación',
           style: const TextStyle(color: AppColors.textPrimary),
         ),
         content: Text(

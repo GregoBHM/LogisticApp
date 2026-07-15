@@ -63,7 +63,7 @@ class DashboardScreen extends ConsumerWidget {
                     const SizedBox(width: 8),
                     _quickStat(
                       '${proyectos.fold<int>(0, (s, p) => s + (ref.watch(cuentasProvider(p.id)).value?.where((c) => c.estaAbierta).length ?? 0))}',
-                      'Cuentas activas',
+                      'Lotes / Vehículos activos',
                     ),
                   ],
                 ),
@@ -177,7 +177,7 @@ class DashboardScreen extends ConsumerWidget {
                               : '$abiertas activa${abiertas > 1 ? 's' : ''}'
                           : proyecto.tipoPlantilla == 'TRANSPORTE'
                               ? 'Sin vehículos'
-                              : 'Sin cuentas activas',
+                              : 'Sin lotes activos',
                       style: TextStyle(color: abiertas > 0 ? AppColors.positive : AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -241,7 +241,7 @@ class DashboardScreen extends ConsumerWidget {
                     proyecto.tipoPlantilla == 'TRANSPORTE' ? Icons.directions_car_rounded : Icons.inventory_2_outlined,
                     proyecto.tipoPlantilla == 'TRANSPORTE'
                         ? '${cuentas.length} vehículo${cuentas.length != 1 ? 's' : ''}'
-                        : '${cuentas.length} cuenta${cuentas.length != 1 ? 's' : ''}',
+                        : '${cuentas.length} lote${cuentas.length != 1 ? 's' : ''}',
                     AppColors.textSecondary,
                   ),
                 ],

@@ -2540,16 +2540,18 @@ class CuentaDetalleScreen extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          '¿Cerrar esta cuenta?',
+        title: Text(
+          tipoPlantilla == 'TRANSPORTE' ? '¿Cerrar este vehículo?' : '¿Cerrar este lote?',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
-        content: const Text(
-          'Una cuenta cerrada ya no admitirá nuevas ventas ni gastos. Esta acción no se puede deshacer.',
+        content: Text(
+          tipoPlantilla == 'TRANSPORTE'
+              ? 'Un vehículo cerrado ya no admitirá nuevas ventas ni gastos. Esta acción no se puede deshacer.'
+              : 'Un lote cerrado ya no admitirá nuevas ventas ni gastos. Esta acción no se puede deshacer.',
           style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
         ),
         actions: [
