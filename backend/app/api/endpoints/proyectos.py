@@ -505,7 +505,7 @@ async def create_empaque(
         ProyectoMiembro.usuario_id == current_user.id
     )
     miembro = (await db.execute(miembro_stmt)).scalars().first()
-    if not miembro or miembro.rol != "dueno":
+    if not miembro or miembro.rol != "dueño":
         raise HTTPException(status_code=403, detail="Solo el dueño puede configurar empaques")
 
     empaque = Empaque(
@@ -513,7 +513,6 @@ async def create_empaque(
         nombre=empaque_in.nombre,
         unidad_medida=empaque_in.unidad_medida,
         cantidad_por_unidad=empaque_in.cantidad_por_unidad,
-        descripcion=empaque_in.descripcion,
     )
     db.add(empaque)
     await db.commit()
@@ -533,7 +532,7 @@ async def delete_empaque(
         ProyectoMiembro.usuario_id == current_user.id
     )
     miembro = (await db.execute(miembro_stmt)).scalars().first()
-    if not miembro or miembro.rol != "dueno":
+    if not miembro or miembro.rol != "dueño":
         raise HTTPException(status_code=403, detail="Solo el dueño puede eliminar empaques")
 
     result = await db.execute(
