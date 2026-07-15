@@ -127,4 +127,9 @@ class ProyectoRepository {
     final res = await _api.client.get('/proyectos/$proyectoId/reporte_datos');
     return ProyectoReporteData.fromJson(res.data);
   }
+
+  Future<HistorialSugerenciasModel> getHistorialSugerencias(String proyectoId) async {
+    final res = await _api.client.get('/proyectos/$proyectoId/historial_sugerencias');
+    return HistorialSugerenciasModel.fromJson(res.data);
+  }
 }

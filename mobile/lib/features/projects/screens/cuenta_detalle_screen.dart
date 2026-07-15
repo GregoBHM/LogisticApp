@@ -1631,6 +1631,46 @@ class CuentaDetalleScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 6),
+                    // ─── CHIPS DE CLIENTES FRECUENTES ──────────────
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final historial = ref.watch(historialSugerenciasProvider(cuenta.proyectoId));
+                        final clientes = historial.valueOrNull?.clientes ?? [];
+                        if (clientes.isEmpty) return const SizedBox.shrink();
+                        return Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: clientes.take(8).map((nombre) {
+                            final sel = clienteCtrl.text == nombre;
+                            return GestureDetector(
+                              onTap: () => setModal(() {
+                                clienteCtrl.text = sel ? '' : nombre;
+                              }),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                decoration: BoxDecoration(
+                                  color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Text(
+                                  nombre,
+                                  style: TextStyle(
+                                    color: sel ? AppColors.background : AppColors.cream,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 12),
                   ],
                   // CAMPOS: Cantidad + Precio (modo normal) o solo Cantidad (modo público)
@@ -2365,39 +2405,50 @@ class CuentaDetalleScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               // ─── BOTONES RÁPIDOS DE CONCEPTO DE GASTO ──────────────
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: (tipoPlantilla == 'TRANSPORTE'
-                    ? ['Combustible', 'Chofer', 'Llantas', 'Mantenimiento', 'Peaje', 'Mecánico']
-                    : ['Estibadores', 'Flete', 'Mallas', 'Pasajes', 'Comida']
-                ).map((concepto) {
-                  final sel = conceptoCtrl.text == concepto;
-                  return GestureDetector(
-                    onTap: () => setModal(() {
-                      conceptoCtrl.text = sel ? '' : concepto;
-                    }),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                      decoration: BoxDecoration(
-                        color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.3),
+              Consumer(
+                builder: (context, ref, _) {
+                  final semilla = tipoPlantilla == 'TRANSPORTE'
+                      ? ['Combustible', 'Chofer', 'Llantas', 'Mantenimiento', 'Peaje', 'Mecánico']
+                      : ['Estibadores', 'Flete', 'Mallas', 'Pasajes', 'Comida'];
+                  final historial = ref.watch(historialSugerenciasProvider(cuenta.proyectoId));
+                  final gastosHistorial = historial.valueOrNull?.gastos ?? [];
+                  // Merge: historial primero, luego semillas sin duplicar
+                  final chips = <String>[...gastosHistorial];
+                  for (final s in semilla) {
+                    if (!chips.contains(s)) chips.add(s);
+                  }
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: chips.take(10).map((concepto) {
+                      final sel = conceptoCtrl.text == concepto;
+                      return GestureDetector(
+                        onTap: () => setModal(() {
+                          conceptoCtrl.text = sel ? '' : concepto;
+                        }),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: sel ? AppColors.cream : AppColors.cream.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            concepto,
+                            style: TextStyle(
+                              color: sel ? AppColors.background : AppColors.cream,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        concepto,
-                        style: TextStyle(
-                          color: sel ? AppColors.background : AppColors.cream,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
+                      );
+                    }).toList(),
                   );
-                }).toList(),
+                },
               ),
               const SizedBox(height: 12),
               _sheetField(

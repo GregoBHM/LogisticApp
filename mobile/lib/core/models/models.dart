@@ -653,3 +653,22 @@ class ProyectoReporteData {
             .toList(),
       );
 }
+
+class HistorialSugerenciasModel {
+  final List<String> clientes;
+  final List<String> gastos;
+  final List<String> productos;
+
+  const HistorialSugerenciasModel({
+    this.clientes = const [],
+    this.gastos = const [],
+    this.productos = const [],
+  });
+
+  factory HistorialSugerenciasModel.fromJson(Map<String, dynamic> json) =>
+      HistorialSugerenciasModel(
+        clientes: List<String>.from(json['clientes'] ?? []),
+        gastos: List<String>.from(json['gastos'] ?? []),
+        productos: List<String>.from(json['productos'] ?? []),
+      );
+}

@@ -100,3 +100,9 @@ final empaquesProvider = FutureProvider.family<List<EmpaqueModel>, String>(
     return ref.watch(empaqueRepositoryProvider).getEmpaques(proyectoId);
   },
 );
+
+final historialSugerenciasProvider = FutureProvider.family<HistorialSugerenciasModel, String>(
+  (ref, proyectoId) async {
+    return ref.watch(proyectoRepositoryProvider).getHistorialSugerencias(proyectoId);
+  },
+);

@@ -282,3 +282,8 @@ class ProyectoReporteResponse(BaseModel):
     ventas: List[VentaReporteItem]
     gastos: List[GastoReporteItem]
     abonos: List[AbonoReporteItem]
+
+class HistorialSugerenciasResponse(BaseModel):
+    clientes: List[str] = []
+    gastos: List[str] = []
+    productos: List[str] = []

@@ -1645,15 +1645,10 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                     proyecto.tipoPlantilla == 'TRANSPORTE' ? 'Ej: Flete, Transporte de carga' : productoCtrl.text.isNotEmpty ? productoCtrl.text : 'Ej: Mango, Ropa, Servicio',
                   ),
                   // ─── BOTONES RÁPIDOS DE PRODUCTO (DINÁMICOS) ──────────────────
-                  Builder(
-                    builder: (context) {
-                      final cuentasAsync = ref.watch(cuentasProvider(proyecto.id));
-                      final productosUsados = cuentasAsync.value
-                              ?.map((c) => c.producto)
-                              .where((p) => p.isNotEmpty)
-                              .toSet()
-                              .toList() ??
-                          [];
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final historial = ref.watch(historialSugerenciasProvider(proyecto.id));
+                      final productosUsados = historial.valueOrNull?.productos ?? [];
 
                       if (productosUsados.isEmpty) return const SizedBox.shrink();
 
@@ -1663,7 +1658,7 @@ class ProyectoDetalleScreen extends ConsumerWidget {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: productosUsados.map((prod) {
+                            children: productosUsados.take(10).map((prod) {
                               final sel = productoCtrl.text == prod;
                               return GestureDetector(
                                 onTap: () => setModal(() {

@@ -11,7 +11,7 @@ from app.schemas.domain import (
     ProyectoCreate, ProyectoResponse, ProyectoUpdate, ProyectoInvite, ProyectoMiembroUpdate,
     TransaccionGeneralCreate, TransaccionGeneralResponse, TransaccionGeneralUpdate,
     ProyectoReporteResponse, VentaReporteItem, GastoReporteItem, AbonoReporteItem,
-    EmpaqueCreate, EmpaqueResponse
+    EmpaqueCreate, EmpaqueResponse, HistorialSugerenciasResponse
 )
 
 router = APIRouter()
@@ -522,3 +522,61 @@ async def delete_empaque(
 
     await db.delete(empaque)
     await db.commit()
+
+@router.get("/{id}/historial_sugerencias", response_model=HistorialSugerenciasResponse)
+async def get_historial_sugerencias(
+    id: str,
+    current_user: Perfil = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Devuelve sugerencias basadas en el historial del proyecto: clientes, gastos y productos."""
+    # Verificar pertenencia
+    stmt = select(ProyectoMiembro).filter(
+        ProyectoMiembro.proyecto_id == id,
+        ProyectoMiembro.usuario_id == current_user.id
+    )
+    if not (await db.execute(stmt)).scalars().first():
+        raise HTTPException(status_code=403, detail="No eres miembro de este proyecto")
+
+    # Obtener IDs de cuentas del proyecto
+    cuentas_stmt = select(Cuenta.id).filter(Cuenta.proyecto_id == id)
+    cuentas_ids = [row[0] for row in (await db.execute(cuentas_stmt)).all()]
+
+    clientes: list[str] = []
+    gastos_desc: list[str] = []
+    productos: list[str] = []
+
+    if cuentas_ids:
+        # Clientes más frecuentes (de ventas)
+        clientes_stmt = (
+            select(Venta.cliente, func.count(Venta.cliente).label("cnt"))
+            .filter(Venta.cuenta_id.in_(cuentas_ids))
+            .group_by(Venta.cliente)
+            .order_by(func.count(Venta.cliente).desc())
+            .limit(20)
+        )
+        clientes = [row[0] for row in (await db.execute(clientes_stmt)).all()]
+
+        # Descripciones de gastos más frecuentes
+        gastos_stmt = (
+            select(Gasto.descripcion, func.count(Gasto.descripcion).label("cnt"))
+            .filter(Gasto.cuenta_id.in_(cuentas_ids))
+            .group_by(Gasto.descripcion)
+            .order_by(func.count(Gasto.descripcion).desc())
+            .limit(20)
+        )
+        gastos_desc = [row[0] for row in (await db.execute(gastos_stmt)).all()]
+
+    # Productos únicos de cuentas del proyecto
+    productos_stmt = (
+        select(Cuenta.producto)
+        .filter(Cuenta.proyecto_id == id)
+        .distinct()
+    )
+    productos = [row[0] for row in (await db.execute(productos_stmt)).all()]
+
+    return HistorialSugerenciasResponse(
+        clientes=clientes,
+        gastos=gastos_desc,
+        productos=productos
+    )
